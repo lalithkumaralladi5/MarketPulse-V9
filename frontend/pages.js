@@ -55,7 +55,7 @@
       // Remove empty former grid wrappers after their contents have moved.
       if(node.parentElement===content)node.remove();
     }
-    if(footer){footer.textContent='MARKETPULSE V8 · LOCAL READ-ONLY RESEARCH · NO BROKER ORDERS · REST SNAPSHOTS ARE NOT WEBSOCKET STREAMS';content.append(footer);}
+    if(footer){footer.textContent='MARKETPULSE V9 · READ-ONLY RESEARCH · NO BROKER ORDERS · REST SNAPSHOTS ARE NOT WEBSOCKET STREAMS';content.append(footer);}
     const top=document.querySelector('.topbar');
     const menu=document.createElement('button');menu.type='button';menu.id='mobilePages';menu.className='mobile-pages';menu.setAttribute('aria-label','Open page navigation');menu.textContent='☰ Pages';top.prepend(menu);
     menu.addEventListener('click',()=>document.querySelector('.sidebar').classList.toggle('mobile-open'));
