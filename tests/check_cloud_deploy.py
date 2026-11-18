@@ -26,9 +26,9 @@ def check():
     assert health.get('mode')=='DEMO', 'A public service must never expose live broker market data'
     assert status.get('mode')=='DEMO' and status.get('ordersEnabled') is False, 'Public demo cannot execute broker orders'
     assert ml.get('ready') is False, 'No unverified/synthetic trained-model artifact should be hosted publicly'
-    assert 'PRO RESEARCH TERMINAL • V9' in ui and 'RESEARCH DESK / V9' in ui, 'Hosted UI is still using old branding'
+    assert 'PRO RESEARCH TERMINAL • V10' in ui and 'RESEARCH DESK / V10' in ui, 'Hosted UI is still using old branding'
     assert 'LOCALHOST ONLY' not in ui, 'Hosted UI shows a misleading localhost label'
-    print('PASS: public V9 HTTPS site, healthy API, guarded DEMO data and ML status')
+    print('PASS: public V10 HTTPS site, healthy API, guarded DEMO data and ML status')
 
 if __name__=='__main__':
     attempts=int(os.environ.get('CLOUD_CHECK_ATTEMPTS','8'))
