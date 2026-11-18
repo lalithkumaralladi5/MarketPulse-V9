@@ -1,0 +1,75 @@
+name: MarketPulse CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: marketpulse-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  api-and-ml:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install ML dependencies
+        run: python -m pip install -r ml/requirements.txt
+      - name: Compile Java backend
+        run: |
+          mkdir -p backend/classes
+          javac --release 21 -d backend/classes backend/*.java
+      - name: Validate frontend JavaScript
+        run: for f in frontend/*.js; do node --check "$f"; done
+      - name: ML training and held-out evaluation (synthetic fixtures only)
+        run: python tests/check_ml.py
+      - name: Offline API, Copilot, search and Upstox adapter regression suite
+        run: bash tests/ci_smoke.sh
+
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Chromium browser test dependencies
+        run: |
+          python -m pip install playwright
+          python -m playwright install --with-deps chromium
+      - name: Compile Java and start synthetic test server
+        run: |
+          mkdir -p backend/classes
+          javac --release 21 -d backend/classes backend/*.java
+          PORT=8876 java -cp backend/classes MarketPulseServer > /tmp/marketpulse-browser.log 2>&1 &
+          for i in $(seq 1 45); do curl -fsS http://127.0.0.1:8876/api/health && break; sleep .4; done
+      - name: Test UI navigation, chart, drawings, heatmap, news, and mobile
+        run: python tests/check_v8_browser.py 8876
+      - name: Upload browser screenshots on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: marketpulse-browser-debug
+          path: preview_v8_*.png
+          if-no-files-found: ignore
