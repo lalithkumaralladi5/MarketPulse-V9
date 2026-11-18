@@ -191,10 +191,27 @@ public class MarketPulseServer {
         return map("mode","LIVE","exchange",exchange,"underlying",underlying,"expiry",expiry,"underlyingLtp",spot,"rows",rows,"asOf",ZonedDateTime.now(IST).toString(),"warning","Real exchange snapshots: displayed depth is resting orders, not executed money flow.");
     }
     static Map<String,Object> chainLeg(Object o){Map<String,Object> m=asMap(o);Map<String,Object> g=asMap(m.get("greeks"));return map("symbol",str(m.get("trading_symbol")),"ltp",num(m.get("ltp")),"oi",num(m.get("open_interest")),"volume",num(m.get("volume")),"iv",num(g.get("iv")),"delta",num(g.get("delta")),"theta",num(g.get("theta")));}
-    static Map<String,Object> demoChain(String ex,String und,String expiry){double spot=und.equals("SENSEX")?83570:und.equals("BANKNIFTY")?58130:25480;double step=und.equals("NIFTY")?50:100;List<Map<String,Object>> rows=new ArrayList<>();double at=Math.round(spot/step)*step;
+    static Map<String,Object> demoChain(String ex,String und,String expiry){
+        // Rounded scenario anchors ONLY; not current exchange index quotes.
+        double spot=und.equals("SENSEX")?82000:und.equals("BANKNIFTY")?58000:25480;
+        double step=und.equals("NIFTY")?50:100;List<Map<String,Object>> rows=new ArrayList<>();double at=Math.round(spot/step)*step;
         for(int i=-12;i<=12;i++){double k=at+i*step;rows.add(map("strike",k,"CE",demoLeg(spot,k,"CE",und),"PE",demoLeg(spot,k,"PE",und)));}
-        return map("mode","DEMO","exchange",ex,"underlying",und,"expiry",expiry,"underlyingLtp",spot,"rows",rows,"asOf",ZonedDateTime.now(IST).toString(),"warning","100% synthetic illustrative prices/volume/OI; never use for actual orders.");}
-    static Map<String,Object> demoLeg(double spot,double strike,String type,String und){double intrinsic=type.equals("CE")?Math.max(0,spot-strike):Math.max(0,strike-spot);double atmDist=Math.abs(spot-strike)/spot;double ltp=Math.max(1.5,intrinsic+110*Math.exp(-atmDist*35));double oi=20000+Math.round(34000*Math.exp(-atmDist*30))+(Math.round(strike)%17)*141;double vol=5000+Math.round(16000*Math.exp(-atmDist*28));return map("symbol",und+"-DEMO-"+(int)strike+type,"ltp",round(ltp),"oi",oi,"volume",vol,"iv",14+atmDist*100,"delta",type.equals("CE")?0.53:-0.47,"theta",-5.2);}
+        return map("mode","DEMO","exchange",ex,"underlying",und,"expiry",expiry,"underlyingLtp",spot,"rows",rows,"asOf",ZonedDateTime.now(IST).toString(),
+            "referenceSpotIsSynthetic",true,"warning","SYNTHETIC DEMO: index spot, expiries, premiums, call/put OI, volume and IV are illustrative, NOT exchange quotes. Match the exact expiry and instrument before comparing broker prices.");
+    }
+    static Map<String,Object> demoLeg(double spot,double strike,String type,String und){
+        double intrinsic=type.equals("CE")?Math.max(0,spot-strike):Math.max(0,strike-spot);
+        double atmDist=Math.abs(spot-strike)/spot;
+        double timeValue=(und.equals("SENSEX")?180:110)*Math.exp(-atmDist*35);
+        double ltp=Math.max(1.5,intrinsic+timeValue);
+        // CE and PE interest/volume should not be identical clones in the demo.
+        double step=und.equals("NIFTY")?50:100;
+        double peak=type.equals("CE")?spot+2*step:spot-2*step;
+        double oi=14000+Math.round(44000*Math.exp(-Math.abs(strike-peak)/spot*32))+
+            (type.equals("CE")?1200:3100)+(Math.round(strike)%17)*107;
+        double vol=2500+Math.round(17500*Math.exp(-atmDist*26))+(type.equals("CE")?700:1700);
+        return map("symbol",und+"-DEMO-"+(int)strike+type,"ltp",round(ltp),"oi",oi,"volume",vol,"iv",14+atmDist*100,"delta",type.equals("CE")?0.53:-0.47,"theta",-5.2);
+    }
     static Map<String,Object> analyze(String ex,String und,String exp,double strike,String type){
         if(UPSTOX)return UpstoxAdapter.analyze(ex,und,exp,strike,type);
         Map<String,Object> ch=chain(ex,und,exp);double spot=num(ch.get("underlyingLtp"));
