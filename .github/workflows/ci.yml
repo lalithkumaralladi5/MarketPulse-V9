@@ -39,6 +39,8 @@ jobs:
         run: for f in frontend/*.js; do node --check "$f"; done
       - name: ML training and held-out evaluation (synthetic fixtures only)
         run: python tests/check_ml.py
+      - name: Confirmed-candle BUY/SELL/EXIT signal and no-repaint checks
+        run: node tests/check_momentum_signals.cjs
       - name: Offline API, Copilot, search and Upstox adapter regression suite
         run: bash tests/ci_smoke.sh
 
@@ -66,6 +68,8 @@ jobs:
           for i in $(seq 1 45); do curl -fsS http://127.0.0.1:8876/api/health && break; sleep .4; done
       - name: Test UI navigation, chart, drawings, heatmap, news, and mobile
         run: python tests/check_v8_browser.py 8876
+      - name: Test chart-first workspace and historical signal annotations
+        run: python tests/check_chart_pro.py 8876
       - name: Upload browser screenshots on failure
         if: failure()
         uses: actions/upload-artifact@v4
