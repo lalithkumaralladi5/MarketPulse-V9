@@ -27,6 +27,12 @@ def run():
   assert m['metrics']['testRows']>100
   assert m['metrics']['uniqueDays']>=8
   assert m['metrics']['testBalancedAccuracy']<=1
+  study=m['metrics']['eventStudy']
+  assert study['roundTripCostAssumptionBps']==30
+  assert 0<=study['signalEvents']<=m['metrics']['testRows']
+  if study['signalEvents']:
+   assert 0<=study['netPositiveEventShare']<=1
+   assert np.isfinite(study['averageNetMovePct'])
   model=__import__('joblib').load(engine.MODEL_PATH)
   result=engine.infer(model,m,[x for x in bars if x['instrument_key']=='TEST_EQ|0'][-70:])
   assert result['signal'] in ('UP','DOWN','NO_EDGE')
