@@ -21,9 +21,18 @@ final class UpstoxAdapter {
     static boolean enabled() { return !TOKEN.isBlank(); }
     private static String esc(String v) {return URLEncoder.encode(v,StandardCharsets.UTF_8);}
     private static String underlying(String exchange, String symbol) {
-        if(!"NSE".equals(exchange) || !"NIFTY".equals(symbol))
-            throw new MarketPulseServer.ApiException(400,"The current Upstox connector supports NSE / NIFTY only. Switch to NSE and NIFTY.");
-        return "NSE_INDEX|Nifty 50";
+        // Official Upstox index keys. The provider controls listed expiries.
+        if ("NSE".equals(exchange)) {
+            return switch(symbol) {
+                case "NIFTY" -> "NSE_INDEX|Nifty 50";
+                case "BANKNIFTY" -> "NSE_INDEX|Nifty Bank";
+                case "FINNIFTY" -> "NSE_INDEX|Nifty Fin Service";
+                default -> throw new MarketPulseServer.ApiException(400,
+                    "Choose an NSE index (NIFTY/BANKNIFTY/FINNIFTY), or BSE SENSEX.");
+            };
+        }
+        if ("BSE".equals(exchange) && "SENSEX".equals(symbol)) return "BSE_INDEX|SENSEX";
+        throw new MarketPulseServer.ApiException(400,"SENSEX requires BSE; NSE indexes require NSE.");
     }
     static Object request(String path, Map<String,String> qs, long ttlMillis) {
         StringBuilder uri = new StringBuilder(BASE).append(path);
@@ -62,13 +71,13 @@ final class UpstoxAdapter {
         List<Object> raw=MarketPulseServer.asList(request("/v2/option/contract",Map.of("instrument_key",k),180_000));
         TreeSet<String> dates=new TreeSet<>();String today=LocalDate.now(MarketPulseServer.IST).toString();
         for(Object o:raw) {String d=MarketPulseServer.str(MarketPulseServer.asMap(o).get("expiry"));if(d.matches("\\d{4}-\\d{2}-\\d{2}")&&d.compareTo(today)>=0)dates.add(d);}
-        if(dates.isEmpty())throw new MarketPulseServer.ApiException(502,"No current NIFTY option contracts returned by Upstox.");
+        if(dates.isEmpty())throw new MarketPulseServer.ApiException(502,"No current option contracts returned by Upstox for this underlying.");
         return MarketPulseServer.map("mode","LIVE","provider","Upstox","expiries",new ArrayList<>(dates),"warning","Exchange-listed expiry dates from the Upstox option-contract API.");
     }
     static Map<String,Object> chain(String ex,String und,String expiry) {
         String k=underlying(ex,und);
         List<Object> data=MarketPulseServer.asList(request("/v2/option/chain",Map.of("instrument_key",k,"expiry_date",expiry),12_000));
-        if(data.isEmpty())throw new MarketPulseServer.ApiException(404,"No Upstox NIFTY option contracts for this expiry.");
+        if(data.isEmpty())throw new MarketPulseServer.ApiException(404,"No Upstox option contracts for this selected underlying and expiry.");
         double spot=0;List<Map<String,Object>> rows=new ArrayList<>();
         for(Object o:data) {
             Map<String,Object> r=MarketPulseServer.asMap(o);
@@ -83,6 +92,7 @@ final class UpstoxAdapter {
     }
     private static Map<String,Object> leg(Object value) {
         Map<String,Object> m=MarketPulseServer.asMap(value);
+        if (MarketPulseServer.str(m.get("instrument_key")).isBlank()) return Map.of();
         Map<String,Object> market=MarketPulseServer.asMap(m.get("market_data")),g=MarketPulseServer.asMap(m.get("option_greeks"));
         return MarketPulseServer.map("symbol",MarketPulseServer.str(m.get("instrument_key")),
             "instrumentKey",MarketPulseServer.str(m.get("instrument_key")),
