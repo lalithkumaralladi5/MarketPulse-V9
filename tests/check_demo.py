@@ -30,6 +30,6 @@ def run():
     try:get('/api/analysis',exchange='NSE',underlying='NIFTY',expiry=exp,strike='25500',type='BAD')
     except urllib.error.HTTPError as e:assert e.code==400
     else:raise AssertionError('invalid type should be rejected')
-    with urllib.request.urlopen(BASE+'/') as r:assert b'MarketPulse V9' in r.read()
+    with urllib.request.urlopen(BASE+'/') as r:assert b'MarketPulse V10' in r.read()
     print('PASS: V9 demo expiries, chain, CE & PE analysis, guarded signals, risk levels, validation, UI')
 if __name__=='__main__':run()
