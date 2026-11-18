@@ -7,7 +7,7 @@ const $=id=>document.getElementById(id);
 const fmt=n=>Number.isFinite(+n)?Number(n).toLocaleString('en-IN',{maximumFractionDigits:2,minimumFractionDigits:2}):'—';
 const rupee=n=>'₹'+fmt(n);
 const safe=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const state={instrument:null,option:null,chart:null,quote:null,history:[],interval:5,chartType:'candle',view:90,offset:0,hover:null,drag:false,dragX:0,tool:'cross',pending:null,drawings:[],layout:null,market:[],list:[],optionsUnderlying:null,optionRows:[],optionExpiry:'',optionExpiries:[],news:[],newsKey:'',lastNewsAt:0,searchId:0,chartRequest:0,quoteRequest:0,mode:'DEMO',showGrid:true,showVolume:true,showEma:true,showVwap:true,showBoll:false,watch:new Map(),alert:null,active:false};
+const state={instrument:null,option:null,chart:null,quote:null,history:[],interval:5,chartType:'candle',view:90,offset:0,hover:null,drag:false,dragX:0,tool:'cross',pending:null,drawings:[],layout:null,market:[],list:[],optionsUnderlying:null,optionRows:[],optionExpiry:'',optionExpiries:[],news:[],newsKey:'',lastNewsAt:0,searchId:0,chartRequest:0,quoteRequest:0,mode:'DEMO',showGrid:true,showVolume:true,showSignals:true,showRsi:true,showEma:true,showVwap:true,showBoll:false,watch:new Map(),alert:null,active:false};
 const palettes={bg:'#07111d',grid:'#1b2c3b',light:'#c5d5e7',dim:'#7e98ae',up:'#1fe1aa',down:'#ff6887',gold:'#f4c36b',blue:'#77a4ff',purple:'#c299ff'};
 async function json(url){const c=new AbortController();const t=setTimeout(()=>c.abort(),18000);try{const r=await fetch(url,{cache:'no-store',signal:c.signal});const b=await r.json();if(!r.ok)throw Error(b.error||'HTTP '+r.status);return b;}finally{clearTimeout(t);}}
 function ep(path,qs){return path+'?'+new URLSearchParams(qs).toString();}
@@ -67,7 +67,7 @@ function displayQuote(q){
    const max=Math.max(1,...buys.concat(sells).map(x=>+x.quantity||0));$('v8Depth').innerHTML=Array.from({length:5},(_,i)=>{let b=buys[i]||{},s=sells[i]||{};
     return `<div class="v8-depth-row"><div class="v8-depth-bid" data-width="${Math.max(0,(+b.quantity||0)/max*50)}"></div><div class="v8-depth-ask" data-width="${Math.max(0,(+s.quantity||0)/max*50)}"></div><span>${fmt(b.quantity)}</span><span>${fmt(b.price)}</span><span>${fmt(s.price)}</span><span>${fmt(s.quantity)}</span></div>`;}).join('');$('v8Depth').querySelectorAll('[data-width]').forEach(el=>el.style.width=el.dataset.width+'%');}
   if(state.alert&&!state.alert.triggered&&q.mode==='LIVE'&&q.fresh&&+q.ltp>0){const crossed=state.alert.direction==='above'?q.ltp>=state.alert.price:q.ltp<=state.alert.price;if(crossed){state.alert.triggered=true;storeAlert();banner('Price alert reached: '+state.instrument.symbol+' '+state.alert.direction+' ₹'+fmt(state.alert.price),'ok');}}
-  draw();updateSignal();
+  draw();updateSignal();window.dispatchEvent(new CustomEvent('marketpulse:quote',{detail:{key:state.instrument?.key,quote:q}}));
 }
 function syncOptionAnalysis(a){if(!state.option||!a||+state.option.strike!==+a.strike||state.option.type!==a.type||state.option.expiry!==a.expiry)return;
  const fresh=!!a.dataQuality?.fresh&&!!a.dataQuality?.snapshotFresh&&!!a.dataQuality?.withinNormalHours;
@@ -99,14 +99,14 @@ function draw(){const c=canvas();if(!c)return;const {ctx,w,h}=measureCanvas();ct
  const all=state.history||[],len=Math.min(all.length,Math.max(18,Math.round(state.view))),maxOffset=Math.max(0,all.length-len);state.offset=Math.max(0,Math.min(maxOffset,state.offset));
  const start=Math.max(0,all.length-state.offset-len),bars=all.slice(start,start+len),ind=calculations(all).slice(start,start+len);
  if(!bars.length){ctx.fillStyle=palettes.dim;ctx.font='14px system-ui';ctx.textAlign='center';ctx.fillText('Select a listed NSE/BSE instrument to load its chart',w/2,h/2);return;}
- const L=22,R=w-92,T=23,VTOP=state.showVolume?h-118:h-48,PBTM=VTOP-14,BTM=h-31;const width=R-L,space=width/bars.length;
+ const L=22,R=w-92,T=23,BTM=h-31,RSITOP=state.showRsi?h-135:BTM,RSIBOTTOM=h-44,VBASE=state.showRsi?RSITOP-9:BTM,VTOP=state.showVolume?VBASE-78:VBASE,PBTM=VTOP-16;const width=R-L,space=width/bars.length;
  let prices=bars.flatMap(b=>[+b.high,+b.low]);if(state.showEma)ind.forEach(r=>prices.push(r.ema9,r.ema21));if(state.showVwap)ind.forEach(r=>prices.push(r.vwap));if(state.showBoll)ind.forEach(r=>prices.push(r.bbTop,r.bbBottom));
  const min=Math.min(...prices),max=Math.max(...prices),margin=Math.max(.01,(max-min)*.13),low=min-margin,high=max+margin;
  const py=p=>T+(high-p)/(high-low)*(PBTM-T),price=y=>high-(y-T)/(PBTM-T)*(high-low),px=i=>L+(i-start+.5)*space;
  if(state.showGrid){ctx.strokeStyle=palettes.grid;ctx.lineWidth=1;ctx.font='11px system-ui';ctx.textAlign='left';for(let i=0;i<=5;i++){let y=T+(PBTM-T)*i/5;ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(R,y);ctx.stroke();ctx.fillStyle=palettes.dim;ctx.fillText(fmt(price(y)),R+8,y+3);}for(let j=0;j<8;j++){let x=L+j*width/7;ctx.beginPath();ctx.moveTo(x,T);ctx.lineTo(x,PBTM);ctx.stroke();}}
  const maxVol=Math.max(1,...bars.map(b=>+b.volume||0));
  bars.forEach((b,i)=>{const x=L+(i+.5)*space,up=+b.close>=+b.open,col=up?palettes.up:palettes.down;
-  if(state.showVolume){const v=(+b.volume||0)/maxVol*(BTM-VTOP-12);ctx.globalAlpha=.52;ctx.fillStyle=col;ctx.fillRect(x-space*.29,BTM-v,Math.max(1,space*.58),v);ctx.globalAlpha=1;}
+  if(state.showVolume){const v=(+b.volume||0)/maxVol*(VBASE-VTOP-7);ctx.globalAlpha=.52;ctx.fillStyle=col;ctx.fillRect(x-space*.29,VBASE-v,Math.max(1,space*.58),v);ctx.globalAlpha=1;}
   ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=1.15;
   if(state.chartType==='candle'){ctx.beginPath();ctx.moveTo(x,py(+b.high));ctx.lineTo(x,py(+b.low));ctx.stroke();ctx.fillRect(x-space*.31,Math.min(py(+b.open),py(+b.close)),Math.max(1.5,space*.62),Math.max(1,Math.abs(py(+b.open)-py(+b.close))));}
  });
@@ -117,6 +117,27 @@ function draw(){const c=canvas();if(!c)return;const {ctx,w,h}=measureCanvas();ct
  if(state.showBoll){trace(ind.map(x=>x.bbTop),'#80c1d8');trace(ind.map(x=>x.bbBottom),'#80c1d8');}
  // The latest provider quote is separate from historical OHLC; don't falsify candle shapes.
  if(state.quote?.ltp>0){const q=state.quote,y=py(q.ltp);if(y>=T&&y<=PBTM){ctx.strokeStyle=q.fresh?'#43e3ae':'#caad72';ctx.setLineDash([6,5]);ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(R,y);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle=q.fresh?'#145c4a':'#6b573a';ctx.fillRect(R,y-12,91,23);ctx.fillStyle='#f8fdff';ctx.font='bold 11px system-ui';ctx.fillText(fmt(q.ltp),R+8,y+4);}}
+ // Historical research annotations: use only completed candles (last candle excluded).
+ if(state.showSignals&&window.MarketPulseSignals){
+  const signals=window.MarketPulseSignals.compute(all).markers.filter(m=>m.index>=start&&m.index<start+len);
+  let lastX=-1000;for(const mark of signals){const x=L+(mark.index-start+.5)*space;
+   if(x-lastX<48)continue;lastX=x;const b=all[mark.index],isBuy=mark.type==='BUY',isExit=mark.type==='EXIT';
+   const at=isBuy?py(+b.low)+18:py(+b.high)-18,col=isExit?'#f5c66d':isBuy?'#32e5af':'#ff768f';
+   const y=Math.max(T+17,Math.min(PBTM-17,at));
+   ctx.fillStyle=col;ctx.beginPath();ctx.arc(x,y+(isBuy?-9:9),2.6,0,Math.PI*2);ctx.fill();
+   ctx.beginPath();ctx.roundRect(x-22,y-11,44,22,6);ctx.fill();
+   ctx.font='bold 10px system-ui';ctx.fillStyle='#06131c';ctx.textAlign='center';ctx.fillText(mark.type,x,y+3);
+  }
+ }
+ // Separate RSI pane with 30/70 zones (historical; no fabricated bars).
+ if(state.showRsi){
+  ctx.fillStyle='#091923';ctx.fillRect(L,RSITOP,R-L,RSIBOTTOM-RSITOP+5);
+  ctx.strokeStyle=palettes.grid;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(L,RSITOP);ctx.lineTo(R,RSITOP);ctx.stroke();
+  const ry=v=>RSIBOTTOM-(v/100)*(RSIBOTTOM-RSITOP);
+  ctx.fillStyle='#c9a9ff';ctx.font='10px system-ui';ctx.textAlign='left';ctx.fillText('RSI 14',L+7,RSITOP+14);
+  for(const v of [30,50,70]){const y=ry(v);ctx.strokeStyle=v===50?'#29495b':'#66506f';ctx.setLineDash(v===50?[3,6]:[5,4]);ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(R,y);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle='#8ea8bb';ctx.fillText(String(v),R+8,y+3);}
+  ctx.beginPath();ctx.strokeStyle='#bb91f7';ctx.lineWidth=1.7;let began=false;ind.forEach((v,i)=>{if(!Number.isFinite(v.rsi))return;const x=L+(i+.5)*space,y=ry(v.rsi);if(!began){ctx.moveTo(x,y);began=true;}else ctx.lineTo(x,y);});ctx.stroke();
+ }
  // Draw persistent lines with time anchors instead of canvas pixel coordinates; pan/zoom preserves placements.
  for(const d of state.drawings){ctx.strokeStyle=d.color||palettes.gold;ctx.lineWidth=1.5;ctx.setLineDash(d.kind==='hline'?[5,5]:[]);ctx.beginPath();if(d.kind==='hline'){const y=py(d.price);ctx.moveTo(L,y);ctx.lineTo(R,y);}else{const x1=L+(d.index1-start+.5)*space,x2=L+(d.index2-start+.5)*space;ctx.moveTo(x1,py(d.price1));ctx.lineTo(x2,py(d.price2));}ctx.stroke();ctx.setLineDash([]);}
  if(state.pending){ctx.strokeStyle=palettes.gold;ctx.setLineDash([4,5]);ctx.beginPath();ctx.arc(state.pending.x,state.pending.y,4,0,2*Math.PI);ctx.stroke();ctx.setLineDash([]);}
@@ -247,7 +268,7 @@ function copilotContext(){if(!state.instrument)return{};
    indicators:{ema9:ind.ema9||0,ema21:ind.ema21||0,vwap:ind.vwap||0,rsi14:ind.rsi||0},dataQuality:{fresh:!!q.fresh,snapshotFresh:!!q.fresh,withinNormalHours:!!q.marketOpenApprox,quoteAgeSeconds:q.ageSeconds||-1},
    newsHeadlines:state.newsKey===k.key?state.news.slice(0,5).map(x=>x.headline):[],reasons:['This is an indicator-based description, not a validated trading recommendation.']};
 }
-function init(){readWatch();navSetup();mount();bind();renderWatch();window.MarketPulseTerminal={selectOption,setInstrument,syncOptionAnalysis,invalidateOption,search,draw,refreshHeatmap,context:copilotContext,currentOptionKey:state.option?state.instrument?.key:null,getInstrument:()=>state.instrument,getInterval:()=>state.interval};
+function init(){readWatch();navSetup();mount();bind();renderWatch();window.MarketPulseTerminal={selectOption,setInstrument,syncOptionAnalysis,invalidateOption,search,draw,refreshHeatmap,loadNews,context:copilotContext,currentOptionKey:state.option?state.instrument?.key:null,getInstrument:()=>state.instrument,getInterval:()=>state.interval,getQuote:()=>state.quote,getCandles:()=>state.history,getWatchlist:()=>[...state.watch.values()],getNews:()=>state.news,getSignals:()=>window.MarketPulseSignals?.compute(state.history)||{markers:[],latest:null},setSignals:v=>{state.showSignals=!!v;draw();},setRsi:v=>{state.showRsi=!!v;draw();}};
  // Poll only the selected instrument; news refresh is slower, and all calls stay within the Java adapter.
  setInterval(()=>{if(state.instrument)loadQuote();},12000);
  setInterval(()=>{if(state.instrument&&location.hash==='#chart')loadChart();},60000);
