@@ -1,5 +1,5 @@
 'use strict';
-/* MarketPulse V8 – read-only multi-asset terminal.
+/* MarketPulse V10 – read-only multi-asset terminal.
  * No broker token is sent to the browser. No orders. No price fabricated into provider bars.
  */
 (()=>{
@@ -170,7 +170,7 @@ function navSetup(){const catalog=[['explore','⌕','Markets & Search'],['heatma
  if(!original)throw Error('V7 pages not available');
  const pageTitles={explore:'Markets & Instrument Search',heatmap:'Live Equity Heatmap',news:'News Intelligence',predict:'ML Prediction Lab'};
  for(const key of Object.keys(pageTitles)){
- const e=document.createElement('article');e.id='view-'+key;e.className='workspace-page hidden';e.dataset.view=key;e.innerHTML=`<header class="workspace-head"><div><span class="workspace-kicker">MARKETPULSE V9 · NSE / BSE</span><h1>${pageTitles[key]}</h1><p>${key==='explore'?'Search actual broker-listed equities, index contracts, futures and options.':key==='heatmap'?'A transparent sampled stock heatmap with individually clickable exchange instruments.':'Timestamped Upstox instrument news with source links and refresh.'}</p></div></header>`;
+ const e=document.createElement('article');e.id='view-'+key;e.className='workspace-page hidden';e.dataset.view=key;e.innerHTML=`<header class="workspace-head"><div><span class="workspace-kicker">MARKETPULSE V10 · NSE / BSE</span><h1>${pageTitles[key]}</h1><p>${key==='explore'?'Search actual broker-listed equities, index contracts, futures and options.':key==='heatmap'?'A transparent sampled stock heatmap with individually clickable exchange instruments.':'Timestamped Upstox instrument news with source links and refresh.'}</p></div></header>`;
  document.querySelector('.content').append(e);
  }
  window.MarketPulsePages.show=(key,changeHash=true)=>{
