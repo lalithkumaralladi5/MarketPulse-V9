@@ -11,7 +11,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.*;
 
-/** MarketPulse V8: Java 21, no third-party dependencies, analysis/paper-trading ONLY. */
+/** MarketPulse V9: Java 21, no third-party dependencies, analysis/paper-trading ONLY. */
 public class MarketPulseServer {
     static final ZoneId IST = ZoneId.of("Asia/Kolkata");
     static final String TOKEN = System.getenv().getOrDefault("GROWW_ACCESS_TOKEN", "").trim();
@@ -36,7 +36,7 @@ public class MarketPulseServer {
         server.createContext("/",MarketPulseServer::handle);
         server.setExecutor(Executors.newFixedThreadPool(8));
         server.start();
-        System.out.println("MarketPulse V8 : http://127.0.0.1:"+port);
+        System.out.println("MarketPulse V9 : http://127.0.0.1:"+port);
         System.out.println("Data mode: "+(UPSTOX?"UPSTOX ANALYTICS TOKEN (REST snapshot polling)":LIVE?"GROWW LIVE":"DEMO / SYNTHETIC"));
         System.out.println("No broker orders or automatic trades are possible in this build.");
     }
