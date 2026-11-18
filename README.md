@@ -1,5 +1,13 @@
 # MarketPulse V9 — Hackathon ML Research Terminal
 
+[![MarketPulse CI](https://github.com/lalithkumaralladi5/MarketPulse-V9/actions/workflows/ci.yml/badge.svg)](https://github.com/lalithkumaralladi5/MarketPulse-V9/actions/workflows/ci.yml)
+
+**Hosted public showcase:** [marketpulse-hackathon.onrender.com](https://marketpulse-hackathon.onrender.com/) · [Health endpoint](https://marketpulse-hackathon.onrender.com/api/health)
+
+**Important:** The public site is a **synthetic-data research showcase**, not live exchange data. Its ML predictor remains **NOT TRAINED** until a genuine authorized historical model is trained and privately deployed. Do not upload account credentials or market datasets to GitHub. The automated GitHub Actions checks cover Java, Python training, mock Upstox integration, the browser UI, and the public deployment status.
+
+
+
 **Status: integrated runnable research application, not an exchange-certified trading platform.**
 
 Built from the user's V8 Java project. Java serves the existing read-only Upstox instrument search, multi-page NSE/BSE market workspace, charting, options explorer, liquidity-flow schematic, heatmap, news, risk calculator, paper positions and Pulse Copilot. V9 adds a separate **ML Prediction Lab**, a real Python scikit-learn training pipeline with chronological holdout, and guarded inference through the Java backend.
