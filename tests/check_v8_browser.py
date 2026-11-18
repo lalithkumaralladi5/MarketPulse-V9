@@ -8,7 +8,7 @@ p=int(sys.argv[1]) if len(sys.argv)>1 else 8876
 BASE=f'http://127.0.0.1:{p}'
 OUT=Path(__file__).resolve().parents[1]
 with sync_playwright() as playwright:
- browser=playwright.chromium.launch(headless=True,executable_path='/usr/bin/chromium',args=['--no-sandbox'])
+ browser=playwright.chromium.launch(headless=True,executable_path='/usr/bin/chromium' if Path('/usr/bin/chromium').exists() else None,args=['--no-sandbox'])
  page=browser.new_page(viewport={'width':1440,'height':960},device_scale_factor=1)
  errors=[]
  page.on('pageerror',lambda e:errors.append(str(e)))
