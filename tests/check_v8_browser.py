@@ -41,7 +41,9 @@ with sync_playwright() as playwright:
  assert page.locator('#view-chart').is_visible()
  page.locator('.sidebar a[href="#news"]').click()
  assert page.locator('#view-news').is_visible()
- assert 'No synthetic news' in page.locator('#v8NewsSource').inner_text() or 'UPSTOX' in page.locator('#v8NewsSource').inner_text() or 'Checking' in page.locator('#v8NewsSource').inner_text()
+ page.locator('#v8NewsItems .v8-empty').wait_for(timeout=12000)
+ assert 'No instrument-specific headlines' in page.locator('#v8NewsItems').inner_text()
+ assert page.locator('#v8NewsSource').inner_text().strip(), 'News source/status should not be empty'
  page.locator('.sidebar a[href="#flow"]').click()
  assert page.locator('#v8FlowStocks').is_visible()
  page.screenshot(path=str(OUT/'preview_v8_flow.png'),full_page=False)
