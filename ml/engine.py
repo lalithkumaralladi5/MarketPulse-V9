@@ -64,6 +64,10 @@ def prepare(df:pd.DataFrame, horizon=HORIZON, band=RETURN_BAND, labels=True)->pd
         if labels:
             forward=group.close.shift(-horizon)/group.close-1
             group['future_return']=forward
+            # Holdout-only event evaluation: enter the NEXT bar's open after
+            # the observed completed signal candle. Never assume a close fill.
+            group['next_open']=group.open.shift(-1)
+            group['future_close']=group.close.shift(-horizon)
             group['target']=np.select([forward>band,forward<-band],[1,-1],default=0)
             group=group.iloc[:-horizon]
         group=group.dropna(subset=FEATURES)
@@ -107,6 +111,15 @@ def train(csv_path:Path, source_label='USER_CSV_UNVERIFIED', min_rows=400, inter
     threshold=max(choices,key=lambda x:(x[0],x[2]))[1] if choices else .67
     mask=(ptest.max(axis=1)>=threshold)&(predt!=0)
     signal_n=int(mask.sum()); correct=int((predt[mask]==test.target.to_numpy()[mask]).sum())
+    # Transparent untouched-holdout directional event diagnostic.
+    # Events can overlap and CANNOT be treated as realized portfolio returns.
+    cost_bps=30.0
+    future=test.future_close.to_numpy(dtype=float)
+    entry=test.next_open.to_numpy(dtype=float)
+    ok=mask & np.isfinite(future) & np.isfinite(entry) & (entry>0) & (future>0)
+    direction=predt[ok].astype(float)
+    gross=direction*(future[ok]/entry[ok]-1.0)
+    net=gross-cost_bps/10000.0
     baseline=float(test.target.value_counts(normalize=True).max())
     metrics={
         'totalFeatureRows':len(df),'trainRows':len(train),'validationRows':len(val),'testRows':len(test),
@@ -116,6 +129,14 @@ def train(csv_path:Path, source_label='USER_CSV_UNVERIFIED', min_rows=400, inter
         'testMacroF1':round(float(f1_score(test.target,predt,average='macro',zero_division=0)),4),
         'majorityClassBaseline':round(baseline,4),'highScoreSignals':signal_n,
         'highScoreClassificationPrecision':round(correct/signal_n,4) if signal_n else None,
+        'eventStudy':{
+            'evaluation':'Next-bar-open directional event study; overlapping events, NOT executable portfolio returns',
+            'signalEvents':int(ok.sum()),'roundTripCostAssumptionBps':cost_bps,
+            'averageNetMovePct':round(float(net.mean()*100),4) if len(net) else None,
+            'medianNetMovePct':round(float(np.median(net)*100),4) if len(net) else None,
+            'netPositiveEventShare':round(float((net>0).mean()),4) if len(net) else None,
+            'warning':'Hypothetical event outcomes only. No position limits, bid/ask fills, taxes, exchange holidays, stop/target simulation, portfolio drawdown, or walk-forward re-training.'
+        },
         'confusionMatrix':confusion_matrix(test.target,predt,labels=[-1,0,1]).tolist(),
         'testFrom':str(test.timestamp.min()),'testTo':str(test.timestamp.max()),
         'notice':'Classification metrics on held-out bars, NOT realized trading win rate. No fees/slippage/fills or walk-forward folds included.'
