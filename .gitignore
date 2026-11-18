@@ -1,21 +1,10 @@
-# MarketPulse V9 - keep credentials and generated artifacts out of Git
-.env
-.env.*
-!.env.example
-*.log
 backend/classes/
 ml/models/*.joblib
-ml/models/*.pkl
 ml/models/*.json
 data/*.csv
-data/*.parquet
-data/*.json
+.env
+*.log
 __pycache__/
-*.py[cod]
 .venv/
-venv/
+*.pyc
 .DS_Store
-Thumbs.db
-.idea/
-.vscode/
-*.zip

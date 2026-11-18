@@ -1,0 +1,38 @@
+/* MarketPulse V6 contract chart studio – fully local Canvas, no remote scripts */
+.live-chart-panel{margin-bottom:15px;background:linear-gradient(155deg,#111f2d,#0b1822 64%);border:1px solid #315465;box-shadow:0 15px 45px #0002}
+.chart-studio-head{padding:20px 23px 16px;display:flex;gap:18px;justify-content:space-between;align-items:center;border-bottom:1px solid #20394a}
+.chart-identity h2{margin:8px 0 3px;font-size:21px;color:#edf8fc;letter-spacing:-.6px}
+.chart-identity p{font-size:11px;color:#849fae;margin:0;line-height:1.6}
+.chart-identity-right{display:flex;flex-direction:column;align-items:flex-end;gap:5px;min-width:170px}
+.chart-identity-right strong{font-size:27px;letter-spacing:-1px;font-variant-numeric:tabular-nums;color:#f0f9fe}
+.chart-identity-right small{font-size:10px;color:#91a7b6}
+.chart-mode-pill{font-size:9px;letter-spacing:.6px;font-weight:900;border-radius:6px;padding:6px 10px;color:#abd5e1;background:#183344;border:1px solid #34576a}
+.chart-mode-pill.recent{color:#54efb6;background:#153d31;border-color:#277659}
+.chart-mode-pill.closed{color:#f1ca8c;background:#3b2e1f;border-color:#65512d}
+.chart-mode-pill.demo{color:#8cbffd;background:#203148;border-color:#3d6081}
+.chart-mode-pill.error{color:#ffa0ad;background:#42242f;border-color:#754253}
+.chart-toolbar{padding:11px 19px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;background:#132635;border-bottom:1px solid #284153}
+.chart-timeframes{display:flex;align-items:center;gap:3px;background:#0b1a26;padding:3px;border:1px solid #304a5b;border-radius:9px}
+.chart-tf{background:transparent;border:0;border-radius:6px;color:#95b1bf;font-size:12px;font-weight:800;cursor:pointer;padding:8px 12px}
+.chart-tf:hover{color:#f0fcff;background:#1d3a4a}
+.chart-tf.active{background:#275548;color:#73f7c2;box-shadow:inset 0 0 0 1px #36876b}
+.chart-tools{display:flex;flex-wrap:wrap;align-items:center;gap:11px}
+.chart-switch{font-size:10px;font-weight:700;color:#aec9d4;display:flex;align-items:center;gap:5px;white-space:nowrap;cursor:pointer}
+.chart-switch input{accent-color:#57dba5;cursor:pointer}
+.chart-icon,.chart-refresh{border:1px solid #35576a;background:#182f3e;color:#c1d8e4;border-radius:7px;font-size:14px;padding:5px 9px;cursor:pointer;min-height:29px}
+.chart-refresh{font-size:10px;font-weight:800;padding:6px 10px}
+.chart-icon:hover,.chart-refresh:hover{background:#225242;color:#d6fff1}
+.chart-metrics{display:flex;align-items:center;gap:20px;flex-wrap:wrap;padding:10px 22px 0;color:#9ab3c1;font-size:11px;font-weight:750;font-variant-numeric:tabular-nums;min-height:28px}
+.chart-metrics span{white-space:nowrap}.chart-metrics .up{color:#72e6bb}.chart-metrics .down{color:#f68c9d}
+.chart-stage{position:relative;padding:3px 12px 4px 13px;overflow:hidden;min-height:440px;touch-action:pan-y}
+.chart-stage canvas{display:block;width:100%;height:425px;cursor:crosshair;outline:none;touch-action:none}
+.chart-empty{position:absolute;inset:24px 25px 34px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:12px;padding:16px;color:#a9c1cf;border:1px dashed #3b5868;background:linear-gradient(120deg,#0f2430de,#121c29ec);border-radius:10px;pointer-events:none}
+.chart-empty.hidden{display:none}
+.chart-footer{padding:8px 22px 12px;display:flex;justify-content:space-between;gap:14px;color:#8aa6b6;font-size:10px;border-bottom:1px solid #213748}
+.chart-indicator-grid{display:grid;grid-template-columns:repeat(6,1fr);padding:14px 18px;gap:9px}
+.chart-indicator-grid .indicator{min-width:0}
+.chart-indicator-grid .empty{grid-column:1/-1}
+.chart-disclaimer{margin:0;padding:10px 20px 15px;color:#88a4b2;font-size:10px;line-height:1.6}
+.two-col.lower{display:block}.two-col.lower #paperPanel{max-width:none}
+@media(max-width:1000px){.chart-indicator-grid{grid-template-columns:repeat(3,1fr)}.chart-tools{gap:8px}}
+@media(max-width:650px){.chart-studio-head{padding:14px 12px;align-items:flex-start}.chart-identity h2{font-size:16px}.chart-identity p{font-size:9px}.chart-identity-right{min-width:100px}.chart-identity-right strong{font-size:20px}.chart-mode-pill{font-size:8px;padding:5px}.chart-toolbar{padding:9px;gap:9px}.chart-tools{gap:7px}.chart-switch{font-size:9px}.chart-tf{padding:7px 9px}.chart-stage{padding:2px;min-height:375px}.chart-stage canvas{height:360px}.chart-indicator-grid{grid-template-columns:repeat(2,1fr);padding:10px}.chart-metrics{gap:10px;padding:8px 10px 1px;font-size:9px}.chart-footer{padding:8px 10px;font-size:9px}}

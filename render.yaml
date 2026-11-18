@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: marketpulse-hackathon
+    runtime: docker
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      - key: MARKETPULSE_BIND
+        value: 0.0.0.0
+      - key: PORT
+        value: "10000"
+    # PUBLIC SHOWCASE: synthetic demo only. Set no broker token on a public service.
+    # To host private LIVE data, set an access password (16+ chars), use HTTPS,
+    # and check broker data redistribution terms before doing so.
