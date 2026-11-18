@@ -73,3 +73,19 @@ jobs:
           name: marketpulse-browser-debug
           path: preview_v8_*.png
           if-no-files-found: ignore
+
+  public-deployment:
+    needs: [api-and-ml, browser]
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify hosted Render URL serves V9 demo safely
+        env:
+          PUBLIC_SITE_URL: https://marketpulse-hackathon.onrender.com
+          CLOUD_CHECK_ATTEMPTS: '8'
+        run: python tests/check_cloud_deploy.py
