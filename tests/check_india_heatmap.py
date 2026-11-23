@@ -53,7 +53,7 @@ def serve(mode,port):
     env.update(PORT=str(port),MARKETPULSE_BOD_TEST_BASE='http://127.0.0.1:'+str(PORT))
     if mode=='LIVE':
         env.update(UPSTOX_ACCESS_TOKEN='OFFLINE-ONLY-DO-NOT-LOG',UPSTOX_TEST_BASE='http://127.0.0.1:'+str(PORT))
-    p=subprocess.Popen(['java','-cp','backend/classes','MarketPulseServer'],cwd=os.path.dirname(os.path.dirname(__file__)),
+    p=subprocess.Popen(['java','-Xmx192m','-cp','backend/classes','MarketPulseServer'],cwd=os.path.dirname(os.path.dirname(__file__)),
         env=env,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
     for _ in range(75):
         try:
@@ -118,10 +118,30 @@ def check_browser(port):
         browser.close()
 
 def main():
+    if '--stress' in sys.argv:
+        # A 120+ MB uncompressed NSE derivative master used to exhaust the
+        # hosted Java -Xmx192m heap or trip the old 110 MB whole-file guard.
+        # It contains NO exchange quotes and NO credentials.
+        import gc
+        derivatives=[{'segment':'NSE_FO','instrument_key':'NSE_FO|'+str(i),
+            'trading_symbol':'FAKE'+str(i),'name':'X'*5600} for i in range(21500)]
+        originals=json.loads(gzip.decompress(MASTER['NSE']))
+        MASTER['NSE']=gzip.compress(json.dumps(originals+derivatives).encode())
+        del originals,derivatives
+        gc.collect()
+        assert len(gzip.decompress(MASTER['NSE']))>110_000_000
     broker=ThreadingHTTPServer(('127.0.0.1',PORT),Broker)
     threading.Thread(target=broker.serve_forever,daemon=True).start()
     try:
-        if len(sys.argv)>1 and sys.argv[1]=='--browser':
+        if '--stress' in sys.argv:
+            proc=serve('DEMO',18898)
+            try:
+                code,heat=get(18898,'/api/india-heatmap/page?exchange=NSE&limit=100&quotes=false')
+                assert code==200,(code,heat)
+                assert heat['catalogueCount']==233 and len(heat['items'])==100,heat
+                print('PASS: 110+ MB GZIP master streamed under hosted Java heap without derivatives appearing as equities')
+            finally:proc.terminate();proc.wait(timeout=6)
+        elif len(sys.argv)>1 and sys.argv[1]=='--browser':
             proc=serve('DEMO',18897)
             try:check_browser(18897)
             finally:proc.terminate();proc.wait(timeout=6)
