@@ -102,7 +102,19 @@ public class MarketPulseServer {
         }
         return ok;
     }
-    static void send(HttpExchange ex,int code,Object obj) throws IOException {byte[] b=Json.stringify(obj).getBytes(StandardCharsets.UTF_8);ex.getResponseHeaders().set("Content-Type","application/json; charset=utf-8");ex.sendResponseHeaders(code,b.length);try(OutputStream o=ex.getResponseBody()){o.write(b);}}
+    static void send(HttpExchange ex,int code,Object obj) throws IOException {
+        byte[] b=Json.stringify(obj).getBytes(StandardCharsets.UTF_8);
+        ex.getResponseHeaders().set("Content-Type","application/json; charset=utf-8");
+        // Health probes and other HEAD requests must not send a response body.
+        // Writing one makes the JDK HttpServer emit warnings and may throw IOException.
+        if ("HEAD".equalsIgnoreCase(ex.getRequestMethod())) {
+            ex.sendResponseHeaders(code,-1);
+            ex.close();
+            return;
+        }
+        ex.sendResponseHeaders(code,b.length);
+        try(OutputStream o=ex.getResponseBody()){o.write(b);}
+    }
     static Map<String,String> params(String s){Map<String,String> m=new HashMap<>();if(s==null)return m;for(String part:s.split("&")){String[] p=part.split("=",2);m.put(URLDecoder.decode(p[0],StandardCharsets.UTF_8),p.length>1?URLDecoder.decode(p[1],StandardCharsets.UTF_8):"");}return m;}
     static String exch(Map<String,String> q){String x=q.getOrDefault("exchange","NSE").toUpperCase(Locale.ROOT);if(!x.equals("NSE")&&!x.equals("BSE"))throw new ApiException(400,"Exchange must be NSE or BSE");return x;}
     static String underlying(Map<String,String> q){String x=q.getOrDefault("underlying","NIFTY").toUpperCase(Locale.ROOT);if(!List.of("NIFTY","BANKNIFTY","FINNIFTY","SENSEX").contains(x))throw new ApiException(400,"Unsupported underlying");return x;}
