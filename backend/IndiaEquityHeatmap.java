@@ -149,7 +149,10 @@ final class IndiaEquityHeatmap {
   List<Map<String,Object>> items=new ArrayList<>();
   for(long i=start;i<Math.min(filtered.size(),start+size);i++)items.add(new LinkedHashMap<>(filtered.get((int)i)));
   boolean live=UpstoxAdapter.enabled();int available=0,fresh=0;String error="";
-  if(live&&!items.isEmpty())try{
+  // Load the full equity catalogue first; live quote enrichment is optional.
+  // Frontend renders neutral tiles immediately, then requests quote colors.
+  boolean includeQuotes=!"false".equalsIgnoreCase(q.getOrDefault("quotes","true"));
+  if(live&&includeQuotes&&!items.isEmpty())try{
    var quoted=quotes(exchange,items);
    for(var x:items){var row=quoted.get(s(x.get("key")));if(row!=null){x.putAll(row);available++;if(Boolean.TRUE.equals(row.get("fresh")))fresh++;}}
   }catch(MarketPulseServer.ApiException e){error="Provider quote batch unavailable; missing prices remain neutral.";}
@@ -157,7 +160,7 @@ final class IndiaEquityHeatmap {
    "catalogueCount",c.rows().size(),"matchedCount",filtered.size(),"page",page,"limit",size,
    "totalPages",(filtered.size()+size-1)/size,"items",items,"quoteCount",available,
    "freshQuoteCount",fresh,"asOf",c.downloaded(),"quoteError",error,
-   "quoteScope",live?"Upstox REST quote snapshots: selected page only":"NO BROKER QUOTES · CATALOGUE ONLY",
+   "quoteScope",live?(includeQuotes?"Upstox REST quote snapshots: selected page only":"CATALOGUE READY · loading verified quote colors next"):"NO BROKER QUOTES · CATALOGUE ONLY",
    "areaMeaning",live?"Current-day turnover proxy (price × volume) where quoted; else equal area":"Equal-area tiles · NOT market capitalization",
    "notice","BOD covers provider-listed equity-segment instruments; not a verified all-exchange count. Neutral cells have no verified quote.");
  }
