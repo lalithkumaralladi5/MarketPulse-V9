@@ -21,6 +21,7 @@ MASTER=masters()
 
 class Broker(BaseHTTPRequestHandler):
     batches=[]
+    quote_delay=0
     def log_message(self,*args):pass
     def do_GET(self):
         parsed=urllib.parse.urlparse(self.path);path=urllib.parse.unquote(parsed.path)
@@ -32,6 +33,7 @@ class Broker(BaseHTTPRequestHandler):
             self.send_response(200);self.send_header('Content-Length',str(len(body)))
             self.send_header('Content-Type','application/gzip');self.end_headers();self.wfile.write(body);return
         if path=='/v3/market-quote/quotes':
+            if self.quote_delay:time.sleep(self.quote_delay)
             keys=q.get('instrument_key',[''])[0].split(',');self.batches.append(keys)
             assert len(keys)<=140
             ts=str(int(datetime.now(ZoneInfo('Asia/Kolkata')).timestamp()*1000))
@@ -85,7 +87,7 @@ def check_api(port,mode):
         status,r=get(port,'/api/india-heatmap/page?'+bad);assert status==400,(bad,r)
     assert all(len(batch)<=140 for batch in Broker.batches)
 
-def check_browser(port):
+def check_browser(port,mode='DEMO'):
     from playwright.sync_api import sync_playwright
     with sync_playwright() as p:
         browser=p.chromium.launch(headless=True,args=['--no-sandbox'])
@@ -95,7 +97,14 @@ def check_browser(port):
         page.locator('.ih-tile').first.wait_for(timeout=30000)
         assert page.locator('.ih-tile').count()==100
         assert '233' in page.locator('#ihTotal').inner_text()
-        assert '0 / 100' in page.locator('#ihQuoted').inner_text()
+        if mode=='LIVE':
+            # Catalogue tiles appear before a deliberately delayed provider quote batch.
+            assert '0 / 100' in page.locator('#ihQuoted').inner_text()
+            page.get_by_text('100 / 100',exact=True).first.wait_for(timeout=18000)
+            assert page.locator('#ihMode').inner_text().startswith('UPSTOX')
+            assert 'PRIVATE UPSTOX MODE' in page.locator('#ihAccessNote').inner_text()
+        else:
+            assert '0 / 100' in page.locator('#ihQuoted').inner_text()
         page.locator('#ihPreview').check()
         assert page.locator('#ihPreviewNote').is_visible()
         page.locator('#ihNext').click()
@@ -133,7 +142,13 @@ def main():
     broker=ThreadingHTTPServer(('127.0.0.1',PORT),Broker)
     threading.Thread(target=broker.serve_forever,daemon=True).start()
     try:
-        if '--stress' in sys.argv:
+        if '--live-browser' in sys.argv:
+            Broker.quote_delay=1.8
+            proc=serve('LIVE',18897)
+            try:check_browser(18897,mode='LIVE')
+            finally:proc.terminate();proc.wait(timeout=6)
+            print('PASS live-shaped heatmap UI: catalogue before delayed quotes, fresh verified colors, mobile')
+        elif '--stress' in sys.argv:
             proc=serve('DEMO',18898)
             try:
                 code,heat=get(18898,'/api/india-heatmap/page?exchange=NSE&limit=100&quotes=false')
