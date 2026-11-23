@@ -1,0 +1,61 @@
+/* MarketPulse all-India NSE/BSE stock heatmap, distinct from the 12-stock sample. */
+#view-indiaheatmap>.workspace-head{display:none}
+#view-indiaheatmap{max-width:none}
+.ih-head{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:7px 0 20px}
+.ih-head h1{color:#f0fbff;font-size:clamp(26px,2.8vw,39px);margin:4px 0 6px;font-weight:900}
+.ih-head p{color:#9dbaca;font-size:12px;line-height:1.6;margin:0;max-width:800px}
+.ih-overline{font-size:10px;letter-spacing:.11em;font-weight:900;color:#57e8bc}
+.ih-mode{border:1px solid #33586b;border-radius:7px;background:#14303f;color:#91e7c9;font-size:10px;padding:10px;white-space:nowrap;font-weight:800}
+.ih-layout{display:grid;grid-template-columns:minmax(0,1fr) 264px;gap:14px}
+.ih-panel,.ih-aside{background:#0d2030;border:1px solid #2c4b60;border-radius:12px;overflow:hidden}
+.ih-controls{padding:11px;background:#102738;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.ih-tabs{display:flex;gap:3px;background:#081a28;border:1px solid #31546b;border-radius:7px;padding:3px}
+.ih-tabs button{background:transparent;border:0;color:#a9c3d0;border-radius:6px;padding:10px 13px;cursor:pointer;font-size:12px;font-weight:900}
+.ih-tabs button[aria-selected=true]{background:#4fe0ae;color:#06231b}
+.ih-tabs b{font-size:9px;margin-left:4px}
+.ih-controls input,.ih-controls select,.ih-controls>button{border:1px solid #33556a;background:#0a1e2d;color:#ecffff;border-radius:8px;padding:10px;font:inherit;font-size:12px}
+.ih-controls input{min-width:180px;flex:1}
+.ih-controls>button{cursor:pointer;font-weight:750}
+.ih-controls button:hover{filter:brightness(1.13)}
+.ih-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr)) auto;gap:8px;padding:12px;background:#112a3a;border-block:1px solid #2d4d5e}
+.ih-stats>div:not(.ih-legend){border-right:1px solid #2c4b60}
+.ih-stats small{font-size:9px;color:#83a7b6;display:block;letter-spacing:.06em}
+.ih-stats b{display:block;margin-top:5px;color:#e9fbfe;font-size:17px}
+.ih-legend{display:flex;align-items:center;gap:5px;color:#b4c6d4;font-size:10px;white-space:nowrap}
+.ih-legend i{width:11px;height:11px;border-radius:2px}
+.ih-green{background:#20ae78}.ih-red{background:#d54b62}.ih-gray{background:#4a5e72}
+.ih-note{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;padding:9px 13px;color:#92b3c0;font-size:10px;line-height:1.5;background:#0c2433}
+.ih-note label{white-space:nowrap;display:flex;align-items:center;gap:6px;cursor:pointer}
+.ih-note input{accent-color:#42dcae}
+.ih-preview-note{background:#583120;color:#ffe5a5;padding:10px;text-align:center;letter-spacing:.08em;font-size:11px;font-weight:900}
+.ih-mosaic{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-rows:minmax(190px,1fr);gap:4px;background:#071826;padding:5px;min-height:650px}
+.ih-group{min-width:0;min-height:200px;border:1px solid #374a5a;display:flex;flex-direction:column;overflow:hidden}
+.ih-group header{display:flex;align-items:center;justify-content:space-between;height:28px;background:#1c2c3a;color:#b9d1d9;padding:4px 9px;flex:none;font-size:11px}
+.ih-group header small{color:#91b0be;font-size:9px}
+.ih-group-map{position:relative;min-height:170px;flex:1}
+.ih-tile{box-sizing:border-box!important;position:absolute;border:1px solid #0c1b28!important;border-radius:0!important;min-width:0;min-height:0;padding:2px;overflow:hidden;color:#faffff;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;text-align:center;font-family:inherit}
+.ih-tile:hover,.ih-tile:focus-visible{z-index:5;outline:2px solid #f0ecd2;outline-offset:-2px;filter:brightness(1.2)}
+.ih-tile strong{font-weight:900;font-size:clamp(8px,.75vw,13px);overflow:hidden;text-overflow:ellipsis;max-width:100%;white-space:nowrap}
+.ih-tile span:not(.ih-logo){font-size:10px;font-weight:750}
+.ih-tile small{font-size:9px}
+.ih-tile.ih-stale{background-image:repeating-linear-gradient(135deg,transparent,transparent 9px,#09162122 9px,#09162122 10px)}
+.ih-logo{height:25px;width:25px;background:#0818268e;border-radius:50%;display:grid;place-items:center;font-size:8px;font-weight:900}
+.ih-message{grid-column:1/-1;padding:60px 20px;align-self:center;text-align:center;color:#b9d3de;font-size:14px;line-height:1.7}
+.ih-failure b{color:#ff8a9a}.ih-failure button{background:#16433d;color:#66ecc4;border-radius:8px;padding:9px 14px;cursor:pointer;border:1px solid #3d7567}
+.ih-pagination{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px;flex-wrap:wrap;background:#10283b;border-top:1px solid #2d4c60}
+.ih-pagination>div{display:flex;align-items:center;gap:7px}
+.ih-pagination span{color:#deeff9;font-size:11px}
+.ih-pagination label{color:#8daebb;font-size:11px}
+.ih-pagination button,.ih-pagination input{border:1px solid #3e6170;color:#e9faff;background:#153547;border-radius:7px;padding:9px 10px;font:inherit;font-size:11px}
+.ih-pagination button{cursor:pointer}.ih-pagination button:disabled{opacity:.35;cursor:not-allowed}
+.ih-pagination input{width:62px}
+.ih-disclosure{padding:12px 16px;font-size:10px;line-height:1.8;color:#99b6c6;background:#102738;border-top:1px solid #2e4c60}
+.ih-aside{padding:19px;align-self:start;position:sticky;top:15px;color:#a7c1cf;line-height:1.7;font-size:12px}
+.ih-aside>span{color:#5fe3bb;font-weight:900;letter-spacing:.07em;font-size:10px}
+.ih-aside h2{font-size:20px;color:#f3fcff;line-height:1.3;margin:12px 0}
+.ih-aside-tip{padding:13px;border:1px solid #39566d;border-radius:8px;color:#e0c38e;background:#172e3d;margin:16px 0}
+#ihSelection{border-top:1px solid #3a566b;padding-top:15px;font-size:11px}
+#ihSelection b{font-size:17px;color:#e9f7f8}
+@media(max-width:1250px){.ih-layout{grid-template-columns:1fr}.ih-aside{position:static}}
+@media(max-width:920px){.ih-mosaic{grid-template-columns:repeat(2,minmax(0,1fr))}.ih-stats{grid-template-columns:repeat(4,minmax(0,1fr))}.ih-legend{grid-column:1/-1}}
+@media(max-width:600px){.ih-head{align-items:start;flex-direction:column}.ih-mosaic{grid-template-columns:1fr;grid-auto-rows:210px}.ih-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.ih-tabs{width:100%}.ih-tabs button{flex:1}.ih-controls input{flex-basis:100%}.ih-pagination>div{flex-wrap:wrap}}
