@@ -70,6 +70,14 @@ If you already have a locally trained model, **run-upstox-windows.bat** now star
 
 **Keep the Java and Python processes running while presenting.** Normal cash trading hours are approximately 09:15–15:30 IST on exchange trading days. After the close, actual candles can remain available but actionable live signals correctly switch to WAIT/STALE.
 
+## 10–15 year DAILY history model + password-protected Render instructions
+
+- Read [Private Render + long-history setup](PRIVATE_RENDER_AND_LONG_HISTORY.md) to learn where to paste a **replacement** Upstox token without exposing it in GitHub.
+- Double-click **`train-long-history-windows.bat`** for genuine NSE/BSE equity **DAILY** candle collection over 10, 12 or 15 years and a separate chronological holdout ML evaluation.
+- Actual history coverage is checked and displayed; no misleading 15-year model is claimed if the data span is shorter.
+- Results remain on your computer in `ml/models/marketpulse_daily.json` and are exposed under a distinct **Long-Term Daily Study** label by the local ML Lab; the 15m predictor is separate.
+- Public CI uses synthetic deterministic training **only**, never the credential posted in chat.
+
 ## Train the ML model on actual Upstox data
 
 1. In Markets & Search, search for at least two actively traded NSE/BSE equities; copy the exact **instrument keys** from the search results, e.g. `NSE_EQ|INE002A01018` (example only; confirm from provider).
