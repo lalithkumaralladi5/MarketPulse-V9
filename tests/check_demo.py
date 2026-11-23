@@ -11,6 +11,7 @@ def get(p,**kw):
 
 def run():
     s=get('/api/status'); assert s['ordersEnabled'] is False
+    assert s['upstoxTokenConfigured'] is False, 'DEMO must disclose missing Upstox token without exposing credentials'
     assert s['mode']=='DEMO','tests require an unconfigured DEMO server; unset GROWW_ACCESS_TOKEN'
     exp=get('/api/expiries',exchange='NSE',underlying='NIFTY')['expiries'][0]
     chain=get('/api/chain',exchange='NSE',underlying='NIFTY',expiry=exp)

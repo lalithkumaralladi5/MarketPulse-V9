@@ -14,6 +14,19 @@ Built from the user's V8 Java project. Java serves the existing read-only Upstox
 
 No code in this project places broker orders. ML directional scores are **uncalibrated classification scores**, not verified trading-win probabilities. There is no claim of 93%/99% accuracy.
 
+## Why public charts show DEMO instead of Upstox LIVE
+
+The **public Render site intentionally has NO `UPSTOX_ACCESS_TOKEN`**. Its synthetic candles and BUY/SELL/EXIT annotations demonstrate interaction only. Never paste an Analytics Token into GitHub, frontend JavaScript, a public URL or a browser.
+
+For your **private, real-data Windows session**:
+1. Stop other MarketPulse servers using Ctrl+C. Port 8765 must be free.
+2. Pull the latest source (`git pull`) and double-click **`run-upstox-windows.bat`**. This *Upstox-only* launcher requires the Analytics Token in a masked prompt and will not silently fall back to demo mode.
+3. Open `http://127.0.0.1:8765/api/status`. Expect `"provider":"Upstox"`, `"mode":"LIVE"`, and `"upstoxTokenConfigured":true`. These indicators mean only that the token was supplied, not that it is valid.
+4. Double-click **`verify-upstox-windows.bat`** to test an actual Upstox instrument search and read-only equity quote without displaying any credential.
+5. Open `http://127.0.0.1:8765/#chart` and choose an NSE/BSE instrument. The chart labels should say `UPSTOX HISTORICAL`, never `SYNTHETIC`; quote freshness may correctly report STALE outside trading hours.
+
+The Upstox **Analytics Token** (Bearer token) is different from your developer app's OAuth API key/client ID. This Java connector reads its **Analytics Token from a process-only environment variable**; there is no credential pasted into Java code. Historical chart annotations can be calculated from genuine completed candles even when markets are closed, but an actionable BUY/SELL recommendation stays blocked when freshness/market-session checks fail. Upstox WebSocket streaming is a separate future feature.
+
 ## Three-minute quick start — Windows
 
 **Required:** Java JDK 21, Python 3.11+, Internet access for installing Python packages and provider feeds, modern Chrome/Edge.

@@ -41,6 +41,8 @@ jobs:
         run: python tests/check_ml.py
       - name: Confirmed-candle BUY/SELL/EXIT signal and no-repaint checks
         run: node tests/check_momentum_signals.cjs
+      - name: Guard local Upstox credential and demo-mode launcher behavior
+        run: python tests/check_upstox_mode.py
       - name: Offline API, Copilot, search and Upstox adapter regression suite
         run: bash tests/ci_smoke.sh
       - name: Full NSE/BSE equity catalogues and page-scoped market quote tests
