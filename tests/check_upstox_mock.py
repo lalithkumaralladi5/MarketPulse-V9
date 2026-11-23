@@ -118,6 +118,9 @@ def main():
                     assert status==200 and analysis_bse['symbol']=='BSE_FO|987',analysis_bse
                     status,bse_chart=get(port,f'/api/chart?exchange=BSE&underlying=SENSEX&expiry={EXP}&strike=81700&type=CE&interval=5')
                     assert status==200 and bse_chart['instrumentKey']=='BSE_FO|987',bse_chart
+                    status,option_quote=get(port,'/api/universe/quote?key=BSE_FO%7C987')
+                    assert status==200 and option_quote['mode']=='LIVE' and option_quote['ltp']==130.0,option_quote
+                    assert option_quote['source'].startswith('Upstox'),option_quote
                     for symbol in ('BANKNIFTY','FINNIFTY'):
                         status,index_exp=get(port,f'/api/expiries?exchange=NSE&underlying={symbol}')
                         assert status==200 and EXP in index_exp['expiries'],index_exp
