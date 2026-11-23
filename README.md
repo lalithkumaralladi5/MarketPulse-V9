@@ -42,6 +42,22 @@ The inference bridge now excludes **incomplete candles** and rejects mismatched 
 
 The public Render URL **must remain DEMO**. Do **not** upload any Analytics Token to GitHub code, workflow artifacts or public hosting.
 
+## One-click PRIVATE Upstox history + ML training (new)
+
+**Revoke and replace the Analytics Token previously pasted into chat. Never commit tokens, model files or historical data. The public Render service is intentionally DEMO.**
+
+On Windows, install Java JDK 21 and Python 3.11+, then run **setup-ml-windows.bat** once. Close older MarketPulse processes. Double-click **run-live-ml-windows.bat**, enter the *new* token in its masked local prompt, and the tool automatically:
+
+1. Resolves genuine listed NSE equity instrument keys for RELIANCE, HDFCBANK, ICICIBANK, INFY, TCS, SBIN through Upstox instrument search.
+2. Collects 100 days of real 15-minute OHLCV in permitted date chunks and saves it to the Git-ignored data folder. No synthetic fallback exists in this workflow.
+3. Trains a locally stored sklearn model and shows chronological held-out metrics, including accuracy, balanced accuracy, macro F1 and majority baseline. These are NOT trading-profit estimates.
+4. Starts the Python inference service on localhost:8766 **without the broker token in its environment**, then starts Java's read-only Upstox terminal on localhost:8765.
+5. Opens **ML Prediction Lab**: choose a provider-listed NSE equity and the **15-minute** interval. The model can still report WAIT if the exchange is closed or the quote is stale.
+
+If any real provider request fails, the script stops and explains the error; it never silently substitutes demo candles or a fake model. Trained models and private historical data remain on your PC and are excluded by Git. They do not automatically appear on the public Render site.
+
+If you already have a locally trained model, **run-upstox-windows.bat** now starts Java and the Python ML service together; **verify-upstox-windows.bat** checks a real provider quote without displaying your token.
+
 ## Three-minute quick start — Windows
 
 **Required:** Java JDK 21, Python 3.11+, Internet access for installing Python packages and provider feeds, modern Chrome/Edge.
