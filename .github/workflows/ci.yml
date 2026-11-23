@@ -39,6 +39,8 @@ jobs:
         run: for f in frontend/*.js; do node --check "$f"; done
       - name: ML training and held-out evaluation (synthetic fixtures only)
         run: python tests/check_ml.py
+      - name: Verify private Upstox training launcher and ML inference data provenance
+        run: python tests/check_private_live_ml.py
       - name: Confirmed-candle BUY/SELL/EXIT signal and no-repaint checks
         run: node tests/check_momentum_signals.cjs
       - name: Guard local Upstox credential and demo-mode launcher behavior
