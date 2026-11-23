@@ -61,7 +61,8 @@ final class MarketUniverse {
         List<Map<String,Object>> buy=new ArrayList<>(),sell=new ArrayList<>();
         for(Object row:arr(depth.get("buy"))){Map<String,Object> r=m(row);double price=n(r.get("price")),qty=n(r.get("quantity"));if(price>0&&qty>0){if(bid==0)bid=price;buyQty+=qty;buy.add(map("price",price,"quantity",qty));}}
         for(Object row:arr(depth.get("sell"))){Map<String,Object> r=m(row);double price=n(r.get("price")),qty=n(r.get("quantity"));if(price>0&&qty>0){if(ask==0)ask=price;sellQty+=qty;sell.add(map("price",price,"quantity",qty));}}
-        double ltp=n(raw.get("last_price")),prev=n(raw.get("cp"));
+        double ltp=n(raw.get("last_price")),prev=n(raw.get("prev_close_price"));
+        if(prev<=0)prev=n(raw.get("cp")); // Compatibility with older quote fixtures.
         return map("mode","LIVE","source","Upstox full quote v3 · REST snapshot","key",ik,"ltp",ltp,"previousClose",prev,"changePct",prev>0?(ltp-prev)*100/prev:null,
             "bid",bid,"ask",ask,"bidQty",buyQty,"askQty",sellQty,"depthBuy",buy,"depthSell",sell,"volume",n(raw.get("volume")),"oi",n(raw.get("oi")),
             "timestamp",timestamp>0?Instant.ofEpochMilli(timestamp).toString():"","ageSeconds",age,"fresh",MarketPulseServer.normalHours()&&age>=-30&&age<=60,"marketOpenApprox",MarketPulseServer.normalHours(),"receivedAt",Instant.now().toString());
@@ -133,9 +134,18 @@ final class MarketUniverse {
             if(keys.isEmpty())throw new MarketPulseServer.ApiException(503,"No instruments were resolved for the equity heatmap.");
             // Get quotes in one authorized batch to avoid per-stock polling and respect rate limits.
             Map<String,Object> snapshots=m(UpstoxAdapter.request("/v3/market-quote/quotes",Map.of("instrument_key",String.join(",",keys)),15_000));
+            // V3 responses are keyed by exchange + trading symbol, not instrument key.
+            // Match each returned quote by its authoritative instrument_token field.
+            Map<String,Map<String,Object>> byKey=new HashMap<>();
+            for(Object raw:snapshots.values()){
+                Map<String,Object> quote=m(raw);
+                String token=s(quote.get("instrument_token"));
+                if(!token.isBlank())byKey.put(token,quote);
+            }
             List<Map<String,Object>> items=new ArrayList<>();
-            for(String ik:keys){Map<String,Object> r=m(snapshots.get(ik.replace('|',':')));if(r.isEmpty())continue;
-                double ltp=n(r.get("last_price")),prev=n(r.get("cp"));
+            for(String ik:keys){Map<String,Object> r=byKey.get(ik);if(r==null)continue;
+                double ltp=n(r.get("last_price")),prev=n(r.get("prev_close_price"));
+                if(prev<=0)prev=n(r.get("cp"));
                 items.add(map("symbol",names.get(ik),"key",ik,"exchange",ex,"ltp",ltp,"changePct",prev>0?MarketPulseServer.round(100*(ltp-prev)/prev):null,"volume",n(r.get("volume")),"fresh",MarketPulseServer.normalHours()));
             }
             Map<String,Object> out=map("mode","LIVE","source","Upstox listed-equity REST quote sample","exchange",ex,"items",items,"asOf",Instant.now().toString(),"coverage",items.size()+" of "+BASKET.size()+" requested stocks (not whole market)");
