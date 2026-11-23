@@ -7,7 +7,7 @@ if errorlevel 1 (
   exit /b 1
 )
 if not exist backend\classes mkdir backend\classes
-javac --release 21 -d backend\classes backend\MarketPulseServer.java backend\UpstoxAdapter.java backend\PulseCopilot.java backend\MarketUniverse.java backend\MlBridge.java
+javac --release 21 -d backend\classes backend\MarketPulseServer.java backend\UpstoxAdapter.java backend\PulseCopilot.java backend\MarketUniverse.java backend\IndiaEquityHeatmap.java backend\MlBridge.java
 if errorlevel 1 (pause & exit /b 1)
 echo.
 echo OPEN http://127.0.0.1:8765 in your browser
