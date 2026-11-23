@@ -55,6 +55,8 @@ jobs:
         run: bash tests/ci_smoke.sh
       - name: Full NSE/BSE equity catalogues and page-scoped market quote tests
         run: python tests/check_india_heatmap.py
+      - name: Stream a 110MB+ BOD master within the Render JVM heap limit
+        run: python tests/check_india_heatmap.py --stress
 
   browser:
     runs-on: ubuntu-latest
