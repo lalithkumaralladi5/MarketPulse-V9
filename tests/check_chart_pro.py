@@ -28,6 +28,13 @@ with sync_playwright() as p:
     assert 'no live entry signal' in page.locator('#v10LiveGate').inner_text()
     page.locator('#v10Signals').uncheck();page.locator('#v10Signals').check()
     page.locator('#v10Rsi').uncheck();page.locator('#v10Rsi').check()
+    page.locator('[data-side="audit"]').click()
+    page.locator('#v11Audit').wait_for(timeout=5000)
+    audit_text=page.locator('#v11Audit').inner_text()
+    assert 'SYNTHETIC DEMO' in audit_text,audit_text
+    assert 'next-COMPLETED-candle open' in audit_text,audit_text
+    assert 'Not real orders' in audit_text,audit_text
+    assert 'Closed setups' in audit_text,audit_text
     page.locator('[data-side="depth"]').click()
     assert page.locator('[data-pane="depth"]').is_visible()
     page.locator('[data-side="watchlist"]').click()
@@ -45,7 +52,9 @@ with sync_playwright() as p:
     phone.goto(base+'/#chart',wait_until='domcontentloaded')
     phone.locator('#v10Sidebar').wait_for(timeout=10000)
     assert phone.locator('#v10Signals').is_visible()
+    phone.locator('[data-side="audit"]').click()
+    assert phone.locator('#v11Audit').is_visible()
     assert not phone_errors,phone_errors
     phone.screenshot(path='preview_v10_mobile.png',full_page=False)
     browser.close()
-print('PASS: chart-first layout, closed-candle markers, toggles, watchlist, depth, news, zoom, and mobile')
+print('PASS: chart-first layout, closed-candle markers, signal audit, toggles, watchlist, depth, news, zoom, and mobile')

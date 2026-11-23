@@ -13,3 +13,19 @@
 @media(max-width:1220px){.v10-terminal .v8-chart-body{grid-template-columns:44px minmax(0,1fr) 255px}.v10-sidebar{font-size:11px}.v10-terminal #v8Canvas{height:610px}}
 @media(max-width:950px){#view-chart{margin:0}.v10-terminal .v8-chart-body{grid-template-columns:43px minmax(0,1fr)}.v10-terminal #v8Canvas{height:560px;min-height:420px}.v10-sidebar{grid-column:1/-1;border-left:0;border-top:1px solid #264156}.v10-side-content{max-height:350px}.v10-chart-extras{margin-left:0}}
 @media(max-width:560px){.v10-terminal #v8Canvas{height:450px;min-height:370px}.v10-terminal .v8-terminal-heading{gap:8px}.v10-ribbon-fill{display:none}.v10-help{display:none}.v10-terminal .v8-chart-body{grid-template-columns:35px minmax(0,1fr)}.v10-terminal .v8-draw-tools{width:35px;padding:8px 0}.v10-terminal .v8-draw-tools button{padding:6px}.v10-side-content{max-height:400px}}
+
+
+/* Auditable historical momentum observations; explicitly not broker fills. */
+.v11-audit-source{border:1px solid #4b5161;border-radius:6px;padding:8px;color:#f2cb86;background:#242738;font-size:10px;font-weight:800;letter-spacing:.06em}
+.v11-audit-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:10px}
+.v11-audit-metrics>div{background:#102b38;border:1px solid #315063;border-radius:6px;padding:10px 5px;min-width:0}
+.v11-audit-metrics small{font-size:9px;line-height:1.35;display:block;color:#98b1c3;min-height:27px}
+.v11-audit-metrics strong{font-size:14px;display:block;color:#f1ffff;margin-top:7px}
+.v11-audit-notice{font-size:10px;line-height:1.65;color:#a7bfcb;border-left:2px solid #f0c376;padding:8px 9px;margin:12px 0;background:#182836}
+.v11-audit-pending{font-size:10px;color:#efc987;margin:12px 0}
+.v11-audit-ledger{display:flex;flex-direction:column;gap:8px}
+.v11-audit-event{border:1px solid #304b5b;border-radius:6px;padding:10px;background:#0a1926;display:flex;flex-direction:column;gap:7px}
+.v11-audit-event>div{display:flex;justify-content:space-between;align-items:center}
+.v11-audit-event b{font-size:10px}.v11-audit-event strong{font-variant-numeric:tabular-nums;font-size:13px}
+.v11-audit-event small{font-size:10px;line-height:1.5;color:#91a9bc;overflow-wrap:anywhere}
+.v11-audit-buy,.v11-audit-positive{color:#5deab3}.v11-audit-sell,.v11-audit-negative{color:#ff839d}
