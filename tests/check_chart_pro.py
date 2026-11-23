@@ -47,6 +47,14 @@ with sync_playwright() as p:
     page.locator('#v8Fit').click()
     assert not errors,errors
     page.screenshot(path='preview_v10_chart.png',full_page=False)
+    # A selected CE/PE must immediately request its own quote; previously
+    # loadQuote() returned early whenever state.option was present.
+    with page.expect_request(lambda req: '/api/universe/quote?' in req.url and 'DEMO_FO' in req.url,timeout=15000):
+        page.evaluate("""() => window.MarketPulseTerminal.setInstrument({
+          key:'DEMO_FO|SENSEX_81900_CE',symbol:'SENSEX 81900 CE',exchange:'BSE',
+          segment:'DEMO_FO',type:'CE',name:'synthetic',
+          option:{underlying:'SENSEX',exchange:'BSE',strike:81900,type:'CE',expiry:'2026-12-01'}
+        },true)""")
     phone=browser.new_page(viewport={'width':430,'height':900})
     phone_errors=[];phone.on('pageerror',lambda err:phone_errors.append(str(err)))
     phone.goto(base+'/#chart',wait_until='domcontentloaded')
