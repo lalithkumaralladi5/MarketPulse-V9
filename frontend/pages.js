@@ -10,6 +10,7 @@
     indiaheatmap:['Indian Stock Heatmap','Browse the complete NSE/BSE equity-segment instrument catalogue; real quotes are page-scoped.','▦'],
     flow:['Liquidity Flow Map','Interactive strike network with separate OI and displayed order-book measurements.','〰'],
     chart:['Pro Chart Terminal','Equity and derivatives charts with overlays, drawing tools and research data.','▥'],
+    tradingdesk:['Paper Trading Desk','Risk-gated simulated orders, paper portfolio positions and a local execution journal. No real brokerage orders.','⇄'],
     paper:['Paper Positions','Manual paper trading only. No broker order endpoints exist.','◎'],
     risk:['Risk Studio','Lot sizing and worst-case premium exposure before a decision.','◇'],
     copilot:['Pulse Copilot AI','Ask about your selected contract, risk gates and available data.','✧'],
