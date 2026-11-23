@@ -67,18 +67,39 @@
  function tabs(){
   document.querySelectorAll('[data-market-exchange]').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.marketExchange===state.exchange)));
  }
+ async function enrichQuotes(seq,filters){
+  if(state.data?.mode!=='LIVE'||!state.data.items?.length)return;
+  const request=new URLSearchParams(filters);request.set('quotes','true');
+  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),37000);
+  try{
+   const response=await fetch('/api/india-heatmap/page?'+request,{cache:'no-store',signal:controller.signal});
+   const j=await response.json();
+   if(!response.ok)throw Error(j.error||'Upstox quote batch error');
+   if(seq!==state.seq)return;
+   state.data=j;
+   $('ihQuoted').textContent=j.quoteCount+' / '+j.items.length;
+   $('ihFresh').textContent=j.freshQuoteCount+' / '+j.quoteCount;
+   $('ihProvenance').textContent=(j.quoteError||j.quoteScope)+' · '+j.areaMeaning;
+   $('ihMode').textContent=j.quoteCount?'UPSTOX · '+j.quoteCount+' VERIFIED QUOTES':'UPSTOX · CATALOGUE / NO QUOTES';
+   render();
+  }catch(e){
+   if(seq!==state.seq)return;
+   $('ihProvenance').textContent='Catalogue loaded; quote update unavailable ('+String(e.name==='AbortError'?'Upstox request timed out':e.message)+'). Use Refresh to retry.';
+   $('ihMode').textContent='UPSTOX · CATALOGUE READY';
+  }finally{clearTimeout(timer);}
+ }
  async function load(){
   if(!$('ihMosaic'))return;const seq=++state.seq;tabs();
   $('ihMosaic').innerHTML='<div class="ih-message">Loading '+esc(state.exchange)+' full instrument catalogue…</div>';
   $('ihRefresh').disabled=true;
-  const q=new URLSearchParams({exchange:state.exchange,page:state.page,limit:state.size,sort:state.sort,query:state.query,type:state.series});
+  const q=new URLSearchParams({exchange:state.exchange,page:state.page,limit:state.size,sort:state.sort,query:state.query,type:state.series,quotes:'false'});
   try{
-   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),29000);
+   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),90000);
    let response;
    try{response=await fetch('/api/india-heatmap/page?'+q,{cache:'no-store',signal:controller.signal});}finally{clearTimeout(timer);}
    const result=await response.json();if(!response.ok)throw Error(result.error||'Provider request failed');
    if(seq!==state.seq)return;state.data=result;
-   $('ihMode').textContent=result.mode==='LIVE'?'UPSTOX · PAGE QUOTES':'BOD CATALOGUE · NO LIVE QUOTES';
+   $('ihMode').textContent=result.mode==='LIVE'?'UPSTOX · LOADING QUOTES':'BOD CATALOGUE · NO LIVE QUOTES';
    $('ihCount'+result.exchange).textContent=number(result.catalogueCount);
    $('ihTotal').textContent=number(result.catalogueCount);
    $('ihFiltered').textContent=number(result.matchedCount);
@@ -90,6 +111,8 @@
    $('ihFirst').disabled=$('ihPrev').disabled=result.page<=1;
    $('ihNext').disabled=$('ihLast').disabled=result.page>=result.totalPages;
    render();
+   $('ihAccessNote').textContent=result.mode==='LIVE'?'PRIVATE UPSTOX MODE: real REST quote snapshots are fetched for the visible page only. Stale or missing quotes remain labeled; live streaming is not yet enabled.':'PUBLIC DEMO: the full instrument catalogue is available but prices are not live. Optional colors are illustrative.';
+   if(result.mode==='LIVE')void enrichQuotes(seq,q);
   }catch(e){if(seq!==state.seq)return;state.data=null;
    $('ihMosaic').innerHTML='<div class="ih-message ih-failure"><b>'+esc(e.message)+
     '</b><p>Full instrument master unavailable. The system did not substitute the 12-stock sample.</p><button id="ihRetry">Retry</button></div>';
@@ -123,7 +146,7 @@
    '<p class="ih-disclosure">BOD catalogue lists all equity-segment instruments made available by Upstox, including some ETFs and special series; it does not establish a verified count of every Indian exchange-listed company. Only visible-page symbols receive live REST quotes when a private Upstox token is configured. Missing quotes remain gray. Tile area uses turnover proxy where available, otherwise equal area — NOT market capitalization. Alphabetical groups are used unless authenticated sector metadata exists.</p>',
    '</main><aside class="ih-aside"><span>UNIFIED STOCK RESEARCH</span><h2>Every listed stock is searchable.</h2>',
    '<p>Choose NSE or BSE, browse every catalogue page, then click any stock tile to open its chart, momentum signals, market depth and news.</p>',
-   '<div class="ih-aside-tip">Public deployment: full instrument catalogue, but no private market quotes. Colored previews are explicitly illustrative.</div>',
+   '<div class="ih-aside-tip" id="ihAccessNote">Catalogue data is public; quote access depends on this server&#39;s private Upstox configuration.</div>',
    '<div id="ihSelection">Select a stock to open its chart.</div></aside></div>'
   ].join('');
   root.querySelectorAll('[data-market-exchange]').forEach(b=>b.addEventListener('click',()=>{
@@ -146,6 +169,10 @@
    window.MarketPulseTerminal?.setInstrument?.({key:item.key,symbol:item.symbol,name:item.name,exchange:item.exchange,segment:item.segment,type:item.type});
   });
   window.addEventListener('hashchange',()=>{if(location.hash==='#indiaheatmap')load();});
+  setInterval(()=>{if(location.hash==='#indiaheatmap'&&state.data?.mode==='LIVE'){
+   const q=new URLSearchParams({exchange:state.exchange,page:state.page,limit:state.size,sort:state.sort,query:state.query,type:state.series});
+   void enrichQuotes(state.seq,q);
+  }},45000);
   if(location.hash==='#indiaheatmap')load();
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
