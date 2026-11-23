@@ -39,6 +39,8 @@ jobs:
         run: for f in frontend/*.js; do node --check "$f"; done
       - name: ML training and held-out evaluation (synthetic fixtures only)
         run: python tests/check_ml.py
+      - name: Long-history daily equity ML checks (synthetic fixtures; no broker secrets)
+        run: python tests/check_long_history.py
       - name: Private Upstox bootstrap mock security checks
         run: python tests/check_live_bootstrap.py
       - name: Full provider-shaped collection and ML training fixture (never genuine credentials)
