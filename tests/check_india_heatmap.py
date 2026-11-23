@@ -83,7 +83,11 @@ def check_api(port,mode):
         assert all('AH' in x['symbol'] for x in r['items'])
         status,r=get(port,f'/api/india-heatmap/page?exchange={ex}&type=BE&limit=20')
         assert status==200 and all(x['type']=='BE' for x in r['items'])
-    for bad in ('exchange=MCX','exchange=NSE&limit=500','exchange=NSE&sort=invalid'):
+    # The curated view falls back to the full atlas if none of its named stocks
+    # are present in this deliberately synthetic test catalogue.
+    status,focus=get(port,'/api/india-heatmap/page?exchange=NSE&view=leaders&quotes=false')
+    assert status==200 and focus['view']=='all' and focus['matchedCount']==233
+    for bad in ('exchange=MCX','exchange=NSE&limit=500','exchange=NSE&sort=invalid','exchange=NSE&view=unknown'):
         status,r=get(port,'/api/india-heatmap/page?'+bad);assert status==400,(bad,r)
     assert all(len(batch)<=140 for batch in Broker.batches)
 
@@ -96,6 +100,8 @@ def check_browser(port,mode='DEMO'):
         page.goto('http://127.0.0.1:'+str(port)+'/#indiaheatmap',wait_until='domcontentloaded')
         page.locator('.ih-tile').first.wait_for(timeout=30000)
         assert page.locator('.ih-tile').count()==100
+        assert page.locator('#ihView').input_value()=='all'
+        assert page.locator('#ihBreadth').is_visible()
         assert '233' in page.locator('#ihTotal').inner_text()
         if mode=='LIVE':
             # Catalogue tiles appear before a deliberately delayed provider quote batch.
