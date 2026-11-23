@@ -21,6 +21,7 @@ MASTER=masters()
 
 class Broker(BaseHTTPRequestHandler):
     batches=[]
+    quote_delay=0
     def log_message(self,*args):pass
     def do_GET(self):
         parsed=urllib.parse.urlparse(self.path);path=urllib.parse.unquote(parsed.path)
@@ -32,6 +33,7 @@ class Broker(BaseHTTPRequestHandler):
             self.send_response(200);self.send_header('Content-Length',str(len(body)))
             self.send_header('Content-Type','application/gzip');self.end_headers();self.wfile.write(body);return
         if path=='/v3/market-quote/quotes':
+            if self.quote_delay:time.sleep(self.quote_delay)
             keys=q.get('instrument_key',[''])[0].split(',');self.batches.append(keys)
             assert len(keys)<=140
             ts=str(int(datetime.now(ZoneInfo('Asia/Kolkata')).timestamp()*1000))
@@ -53,7 +55,7 @@ def serve(mode,port):
     env.update(PORT=str(port),MARKETPULSE_BOD_TEST_BASE='http://127.0.0.1:'+str(PORT))
     if mode=='LIVE':
         env.update(UPSTOX_ACCESS_TOKEN='OFFLINE-ONLY-DO-NOT-LOG',UPSTOX_TEST_BASE='http://127.0.0.1:'+str(PORT))
-    p=subprocess.Popen(['java','-cp','backend/classes','MarketPulseServer'],cwd=os.path.dirname(os.path.dirname(__file__)),
+    p=subprocess.Popen(['java','-Xmx192m','-cp','backend/classes','MarketPulseServer'],cwd=os.path.dirname(os.path.dirname(__file__)),
         env=env,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
     for _ in range(75):
         try:
@@ -85,7 +87,7 @@ def check_api(port,mode):
         status,r=get(port,'/api/india-heatmap/page?'+bad);assert status==400,(bad,r)
     assert all(len(batch)<=140 for batch in Broker.batches)
 
-def check_browser(port):
+def check_browser(port,mode='DEMO'):
     from playwright.sync_api import sync_playwright
     with sync_playwright() as p:
         browser=p.chromium.launch(headless=True,args=['--no-sandbox'])
@@ -95,7 +97,14 @@ def check_browser(port):
         page.locator('.ih-tile').first.wait_for(timeout=30000)
         assert page.locator('.ih-tile').count()==100
         assert '233' in page.locator('#ihTotal').inner_text()
-        assert '0 / 100' in page.locator('#ihQuoted').inner_text()
+        if mode=='LIVE':
+            # Catalogue tiles appear before a deliberately delayed provider quote batch.
+            assert '0 / 100' in page.locator('#ihQuoted').inner_text()
+            page.get_by_text('100 / 100',exact=True).first.wait_for(timeout=18000)
+            assert page.locator('#ihMode').inner_text().startswith('UPSTOX')
+            assert 'PRIVATE UPSTOX MODE' in page.locator('#ihAccessNote').inner_text()
+        else:
+            assert '0 / 100' in page.locator('#ihQuoted').inner_text()
         page.locator('#ihPreview').check()
         assert page.locator('#ihPreviewNote').is_visible()
         page.locator('#ihNext').click()
@@ -118,10 +127,36 @@ def check_browser(port):
         browser.close()
 
 def main():
+    if '--stress' in sys.argv:
+        # A 120+ MB uncompressed NSE derivative master used to exhaust the
+        # hosted Java -Xmx192m heap or trip the old 110 MB whole-file guard.
+        # It contains NO exchange quotes and NO credentials.
+        import gc
+        derivatives=[{'segment':'NSE_FO','instrument_key':'NSE_FO|'+str(i),
+            'trading_symbol':'FAKE'+str(i),'name':'X'*5600} for i in range(21500)]
+        originals=json.loads(gzip.decompress(MASTER['NSE']))
+        MASTER['NSE']=gzip.compress(json.dumps(originals+derivatives).encode())
+        del originals,derivatives
+        gc.collect()
+        assert len(gzip.decompress(MASTER['NSE']))>110_000_000
     broker=ThreadingHTTPServer(('127.0.0.1',PORT),Broker)
     threading.Thread(target=broker.serve_forever,daemon=True).start()
     try:
-        if len(sys.argv)>1 and sys.argv[1]=='--browser':
+        if '--live-browser' in sys.argv:
+            Broker.quote_delay=1.8
+            proc=serve('LIVE',18897)
+            try:check_browser(18897,mode='LIVE')
+            finally:proc.terminate();proc.wait(timeout=6)
+            print('PASS live-shaped heatmap UI: catalogue before delayed quotes, fresh verified colors, mobile')
+        elif '--stress' in sys.argv:
+            proc=serve('DEMO',18898)
+            try:
+                code,heat=get(18898,'/api/india-heatmap/page?exchange=NSE&limit=100&quotes=false')
+                assert code==200,(code,heat)
+                assert heat['catalogueCount']==233 and len(heat['items'])==100,heat
+                print('PASS: 110+ MB GZIP master streamed under hosted Java heap without derivatives appearing as equities')
+            finally:proc.terminate();proc.wait(timeout=6)
+        elif len(sys.argv)>1 and sys.argv[1]=='--browser':
             proc=serve('DEMO',18897)
             try:check_browser(18897)
             finally:proc.terminate();proc.wait(timeout=6)

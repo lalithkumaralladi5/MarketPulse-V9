@@ -59,7 +59,7 @@ async function loadQuote(){if(!state.instrument||state.option)return;const id=++
 }
 function displayQuote(q){
   $('v8Ltp').textContent=rupee(q.ltp);const change=q.changePct;$('v8Delta').textContent=change==null?'Change unavailable':(change>=0?'+':'')+fmt(change)+'%';$('v8Delta').className=change>=0?'v8-green':'v8-red';
-  $('v8Feed').textContent=q.mode==='DEMO'?'SYNTHETIC DATA':q.fresh?'UPSTOX · FRESH':'UPSTOX · STALE / CLOSED';$('v8Feed').dataset.kind=q.mode==='DEMO'?'warn':q.fresh?'ok':'bad';
+  $('v8Feed').textContent=q.mode==='DEMO'?'SYNTHETIC DATA':q.fresh?'UPSTOX · FRESH REST QUOTE':q.marketOpenApprox===false?'UPSTOX · MARKET CLOSED':'UPSTOX · STALE QUOTE';$('v8Feed').dataset.kind=q.mode==='DEMO'?'warn':q.fresh?'ok':'bad';
   $('v8Spread').textContent=+q.bid&&+q.ask?rupee(q.bid)+' / '+rupee(q.ask)+' · '+fmt(100*(q.ask-q.bid)/q.ask)+'%':'Unavailable';
   $('v8Vol').textContent=fmt(q.volume);$('v8Oi').textContent=fmt(q.oi);$('v8QuoteAge').textContent=q.mode==='DEMO'?'Not real':q.ageSeconds>=0?q.ageSeconds+'s old':'No timestamp';
   const buys=q.depthBuy||[],sells=q.depthSell||[];
@@ -71,7 +71,7 @@ function displayQuote(q){
 }
 function syncOptionAnalysis(a){if(!state.option||!a||+state.option.strike!==+a.strike||state.option.type!==a.type||state.option.expiry!==a.expiry)return;
  const fresh=!!a.dataQuality?.fresh&&!!a.dataQuality?.snapshotFresh&&!!a.dataQuality?.withinNormalHours;
- state.quote={ltp:a.premium,bid:a.bid,ask:a.ask,volume:a.volume,oi:a.oi,fresh:a.mode==='LIVE'&&fresh,mode:a.mode,source:a.source,ageSeconds:a.dataQuality?.quoteAgeSeconds,depthBuy:a.depth?.buy||[],depthSell:a.depth?.sell||[]};displayQuote(state.quote);
+ state.quote={ltp:a.premium,bid:a.bid,ask:a.ask,volume:a.volume,oi:a.oi,fresh:a.mode==='LIVE'&&fresh,mode:a.mode,source:a.source,ageSeconds:a.dataQuality?.quoteAgeSeconds,marketOpenApprox:!!a.dataQuality?.withinNormalHours,depthBuy:a.depth?.buy||[],depthSell:a.depth?.sell||[]};displayQuote(state.quote);
 }
 function invalidateOption(reason){if(!state.option)return;state.quote=null;$('v8Ltp').textContent='—';$('v8Feed').textContent='DATA UNAVAILABLE';$('v8Feed').dataset.kind='bad';$('v8Spread').textContent='—';$('v8Depth').innerHTML='<div class="v8-empty">Provider quote unavailable</div>';updateSignal();banner('Selected option: '+reason,'error');draw();}
 function calculations(bars){let ema9=0,ema21=0,pv=0,vsum=0,lastDay='',prices=[],avgGain=0,avgLoss=0;
