@@ -38,12 +38,13 @@ class FakeUpstox(BaseHTTPRequestHandler):
             stamp=NOW-timedelta(days=1) if self.stale else datetime.now(IST)
             buy=[{'price':129.90-i*.05,'quantity':850+i*20,'orders':12} for i in range(5)]
             sell=[{'price':130.10+i*.05,'quantity':750+i*20,'orders':11} for i in range(5)]
-            data={key.replace('|',':'):{'instrument_token':key,'last_price':130.0,'last_trade_time':str(int(stamp.timestamp()*1000)),
+            data={key.replace('|',':'):{'instrument_token':key,'last_price':130.0,'prev_close_price':125.0,'last_trade_time':str(int(stamp.timestamp()*1000)),
                          'timestamp':stamp.isoformat(),'depth':{'buy':buy,'sell':sell},'oi':145000,'previous_oi':140000,'volume':100000}}
         elif path.startswith('/v3/historical-candle/'):
             assert any(needle in path for needle in ('NSE_FO|987','NSE_FO|988','BSE_FO|987','BSE_FO|988','NSE_INDEX|Nifty 50','BSE_INDEX|SENSEX')),path
             if '/intraday/' not in path:
-                data={'candles':[]}
+                # Newly listed options can have no historical candles; intraday must still render.
+                self.answer(404,{'status':'error','message':'No historical data'});return
             else:
                 index='NSE_INDEX|' in path
                 start=datetime.combine(NOW.date(),datetime.min.time(),tzinfo=IST).replace(hour=9,minute=15)
@@ -121,6 +122,7 @@ def main():
                     status,option_quote=get(port,'/api/universe/quote?key=BSE_FO%7C987')
                     assert status==200 and option_quote['mode']=='LIVE' and option_quote['ltp']==130.0,option_quote
                     assert option_quote['source'].startswith('Upstox'),option_quote
+                    assert option_quote['previousClose']==125.0 and round(option_quote['changePct'],2)==4.0,option_quote
                     for symbol in ('BANKNIFTY','FINNIFTY'):
                         status,index_exp=get(port,f'/api/expiries?exchange=NSE&underlying={symbol}')
                         assert status==200 and EXP in index_exp['expiries'],index_exp
