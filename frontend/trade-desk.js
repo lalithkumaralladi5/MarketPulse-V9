@@ -11,7 +11,7 @@
  function restore(){
   try {
    const a=JSON.parse(localStorage.getItem(STORAGE)||'null');
-   if(!a||!valid(a.cash)||!Array.isArray(a.ledger)||typeof a.positions!=='object'||!a.positions||!valid(a.realized))return;
+   if(!a||!valid(a.cash)||!Array.isArray(a.ledger)||typeof a.positions!=='object'||!a.positions||!Number.isFinite(+a.realized))return;
    const positions={};
    for(const [key,p] of Object.entries(a.positions)){
     if(!/^(NSE|BSE|DEMO)_(EQ|FO|INDEX)\|[A-Za-z0-9._ -]{1,78}$/.test(key))continue;
