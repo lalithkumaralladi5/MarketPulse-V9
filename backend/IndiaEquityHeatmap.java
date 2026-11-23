@@ -80,7 +80,7 @@ final class IndiaEquityHeatmap {
     if(obj.length()>100_000)throw new IOException("Unreasonably large BOD record");
     if(quoted){
      if(escaped)escaped=false;
-     else if(c=='\\\\')escaped=true;
+     else if(c=='\\')escaped=true;
      else if(c=='"')quoted=false;
     }else if(c=='"')quoted=true;
     else if(c=='{')depth++;
@@ -95,7 +95,7 @@ final class IndiaEquityHeatmap {
    catch(RuntimeException bad){throw new IOException("Malformed BOD equity record");}
    if(!(exchange+"_EQ").equals(s(row.get("segment"))))continue;
    String key=s(row.get("instrument_key")),symbol=s(row.get("trading_symbol")),name=s(row.get("name"));
-   if(key.matches("(?:NSE|BSE)_EQ\\\\|[A-Za-z0-9._ -]{1,78}")&&!symbol.isBlank()&&symbol.length()<=70&&name.length()<=180){
+   if(key.matches("(?:NSE|BSE)_EQ\\|[A-Za-z0-9._ -]{1,78}")&&!symbol.isBlank()&&symbol.length()<=70&&name.length()<=180){
     String industry=s(row.getOrDefault("sector",row.getOrDefault("industry","")));
     unique.putIfAbsent(key,map("key",key,"symbol",symbol,"name",name,"exchange",exchange,
       "segment",exchange+"_EQ","type",s(row.get("instrument_type")),"isin",s(row.get("isin")),
