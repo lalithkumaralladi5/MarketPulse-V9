@@ -7,6 +7,7 @@
   const catalog = {
     scanner:['Option Scanner','Select an expiry, strike and CE/PE contract; open the exact premium chart.','▦'],
     intelligence:['Market Intelligence','Market breadth proxies, OI landscape and an honest historical diagnostic.','◉'],
+    indiaheatmap:['Indian Stock Heatmap','Browse the complete NSE/BSE equity-segment instrument catalogue; real quotes are page-scoped.','▦'],
     flow:['Liquidity Flow Map','Interactive strike network with separate OI and displayed order-book measurements.','〰'],
     chart:['Pro Chart Terminal','Equity and derivatives charts with overlays, drawing tools and research data.','▥'],
     paper:['Paper Positions','Manual paper trading only. No broker order endpoints exist.','◎'],
