@@ -22,13 +22,17 @@ def check():
     status=json.loads(get('/api/status'))
     ml=json.loads(get('/api/ml/status'))
     ui=get('/')
+    chart_js=get('/chart-terminal-pro.js')
+    signal_js=get('/momentum-signals.js')
     assert health.get('ok') is True, 'Health endpoint unhealthy'
     assert health.get('mode')=='DEMO', 'A public service must never expose live broker market data'
     assert status.get('mode')=='DEMO' and status.get('ordersEnabled') is False, 'Public demo cannot execute broker orders'
     assert ml.get('ready') is False, 'No unverified/synthetic trained-model artifact should be hosted publicly'
     assert 'PRO RESEARCH TERMINAL • V10' in ui and 'RESEARCH DESK / V10' in ui, 'Hosted UI is still using old branding'
     assert 'LOCALHOST ONLY' not in ui, 'Hosted UI shows a misleading localhost label'
-    print('PASS: public V10 HTTPS site, healthy API, guarded DEMO data and ML status')
+    assert 'v11Audit' in chart_js and "['audit','Audit']" in chart_js, 'Hosted chart has not deployed the new Signal Audit tab'
+    assert 'return {compute,audit}' in signal_js, 'Hosted momentum engine is an older release without event auditing'
+    print('PASS: public V10 chart + Signal Audit V11, healthy API, guarded DEMO data and ML status')
 
 if __name__=='__main__':
     attempts=int(os.environ.get('CLOUD_CHECK_ATTEMPTS','8'))
@@ -39,5 +43,5 @@ if __name__=='__main__':
         except Exception as e:
             print(f'Attempt {i}/{attempts}: {type(e).__name__}: {e}',flush=True)
             if i==attempts:
-                raise SystemExit('Hosted app did not reach the verified V9 synthetic showcase state.')
+                raise SystemExit('Hosted app did not reach the verified V11 signal-audit synthetic showcase state.')
             time.sleep(25)
