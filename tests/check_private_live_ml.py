@@ -1,5 +1,7 @@
 """Private ML launch and provenance regression. No external broker requests or secrets."""
 from pathlib import Path
+import sys
+sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from fastapi import HTTPException
 from ml.service import Prediction
 from ml import service
