@@ -127,9 +127,17 @@ final class UpstoxAdapter {
         // Previous trading sessions supply enough bars for EMA calculations early in the day.
         String encoded=esc(key).replace("+","%20");List<MarketPulseServer.Bar> list=new ArrayList<>();
         String historical="/v3/historical-candle/"+encoded+"/minutes/5/"+day.minusDays(1)+"/"+day.minusDays(8);
-        List<Object> older=MarketPulseServer.asList(MarketPulseServer.asMap(request(historical,Map.of(),240_000)).get("candles"));
+        List<Object> older=List.of();
+        MarketPulseServer.ApiException historicalError=null;
+        try {older=MarketPulseServer.asList(MarketPulseServer.asMap(request(historical,Map.of(),240_000)).get("candles"));}
+        catch(MarketPulseServer.ApiException e){historicalError=e;}
         String today="/v3/historical-candle/intraday/"+encoded+"/minutes/5";
-        List<Object> intraday=MarketPulseServer.asList(MarketPulseServer.asMap(request(today,Map.of(),25_000)).get("candles"));
+        List<Object> intraday=List.of();
+        MarketPulseServer.ApiException intradayError=null;
+        try {intraday=MarketPulseServer.asList(MarketPulseServer.asMap(request(today,Map.of(),25_000)).get("candles"));}
+        catch(MarketPulseServer.ApiException e){intradayError=e;}
+        if(older.isEmpty()&&intraday.isEmpty()&&intradayError!=null)throw intradayError;
+        if(older.isEmpty()&&intraday.isEmpty()&&historicalError!=null)throw historicalError;
         for(Object raw:older)appendBar(list,raw);
         for(Object raw:intraday)appendBar(list,raw);
         TreeMap<String,MarketPulseServer.Bar> sorted=new TreeMap<>();for(var x:list)sorted.put(x.time(),x);
@@ -213,9 +221,19 @@ final class UpstoxAdapter {
         List<MarketPulseServer.Bar> all=new ArrayList<>();
         // Short prior window keeps the chart useful after the close and on non-trading days.
         String previous="/v3/historical-candle/"+encoded+"/minutes/"+mins+"/"+day.minusDays(1)+"/"+day.minusDays(8);
-        List<Object> older=MarketPulseServer.asList(MarketPulseServer.asMap(request(previous,Map.of(),180_000)).get("candles"));
+        // New or illiquid option contracts may not have historical sessions.
+        // An unavailable history endpoint must not suppress valid intraday candles.
+        List<Object> older=List.of();
+        MarketPulseServer.ApiException olderError=null;
+        try {older=MarketPulseServer.asList(MarketPulseServer.asMap(request(previous,Map.of(),180_000)).get("candles"));}
+        catch(MarketPulseServer.ApiException e){olderError=e;}
         String current="/v3/historical-candle/intraday/"+encoded+"/minutes/"+mins;
-        List<Object> today=MarketPulseServer.asList(MarketPulseServer.asMap(request(current,Map.of(),20_000)).get("candles"));
+        List<Object> today=List.of();
+        MarketPulseServer.ApiException todayError=null;
+        try {today=MarketPulseServer.asList(MarketPulseServer.asMap(request(current,Map.of(),20_000)).get("candles"));}
+        catch(MarketPulseServer.ApiException e){todayError=e;}
+        if(older.isEmpty()&&today.isEmpty()&&todayError!=null)throw todayError;
+        if(older.isEmpty()&&today.isEmpty()&&olderError!=null)throw olderError;
         for(Object o:older)appendBar(all,o);
         for(Object o:today)appendBar(all,o);
         TreeMap<String,MarketPulseServer.Bar> chronological=new TreeMap<>();
