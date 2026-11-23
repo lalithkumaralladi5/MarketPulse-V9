@@ -1,6 +1,8 @@
 import java.net.*;
 import java.net.http.*;
 import java.time.Duration;
+import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.*;
 
 /** Isolated loopback-only Python ML service. Never forwards broker token to ML service. */
@@ -19,9 +21,23 @@ final class MlBridge {
         Map<String,Object> history=MarketUniverse.chart(q);
         Object data=history.get("candles");
         List<Object> bars=MarketPulseServer.asList(data);
-        if(bars.size()<35)return map("mode","LIVE","signal","NO_HISTORY","reason","Need 35 or more recent genuine candles for inference.","bars",bars.size());
+        int interval=(int)MarketPulseServer.num(history.get("interval"));
+        // Exclude any forming bar and reject unknown timestamps. A model may
+        // score only candles that have completed by server receipt time.
+        Instant now=Instant.now();
+        List<Object> complete=new ArrayList<>();
+        for(Object value:bars){
+            Map<String,Object> candle=MarketPulseServer.asMap(value);
+            try {
+                Instant start=OffsetDateTime.parse(MarketPulseServer.str(candle.get("time"))).toInstant();
+                if(interval>0 && !start.plus(Duration.ofMinutes(interval)).isAfter(now.minusSeconds(2)))
+                    complete.add(value);
+            }catch(Exception ignored){ /* unknown candle time: never score */ }
+        }
+        bars=complete;
+        if(bars.size()<35)return map("mode","LIVE","signal","NO_HISTORY","reason","Need 35+ completed, timestamped genuine candles for inference.","bars",bars.size());
         Object pred;
-        try{pred=call(PREDICT,"POST",MarketPulseServer.Json.stringify(map("candles",bars,"instrumentKey",key)));}
+        try{pred=call(PREDICT,"POST",MarketPulseServer.Json.stringify(map("candles",bars,"instrumentKey",key,"intervalMinutes",interval)));}
         catch(Exception e){return map("mode","LIVE","signal","MODEL_OFFLINE","reason","ML service missing, untrained, or unable to score the selected contract. No prediction is shown.");}
         Map<String,Object> result=MarketPulseServer.asMap(pred);
         // A model output is not a trading instruction. Freshness check uses quote timestamps.
