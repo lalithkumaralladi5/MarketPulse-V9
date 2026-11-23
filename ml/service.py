@@ -13,6 +13,7 @@ _cached_mtime=-1
 class Prediction(BaseModel):
     candles:list[dict]=Field(min_length=35,max_length=5000)
     instrumentKey:str=Field(max_length=100)
+    intervalMinutes:int=Field(ge=1,le=1440)
 
 def current():
     global _cached,_cached_mtime
@@ -35,6 +36,8 @@ def health():
 def predict(payload:Prediction):
     loaded=current()
     if not loaded: raise HTTPException(409,detail='No trained model; prediction unavailable.')
+    if payload.intervalMinutes != loaded[1].get('intervalMinutes'):
+        raise HTTPException(409,detail='Model training interval and requested candle interval differ. Train a matching model first.')
     segment=payload.instrumentKey.split('|')[0]
     if segment not in loaded[1].get('trainingSegments',[]):
         raise HTTPException(409,detail='Model not trained for '+segment+' instruments. Train with matching historical market data first.')
