@@ -150,7 +150,7 @@ public class MarketPulseServer {
             "quoteFresh",false,"marketOpen",normalHours(),"polledAt",Instant.now().toString(),"pollSeconds",12,
             "notice","All chart candles and quotes are generated examples, NOT market data.");
     }
-    static Map<String,Object> status(){ZonedDateTime t=ZonedDateTime.now(IST);return map("mode",LIVE?"LIVE":"DEMO","provider",PROVIDER,"asOf",t.toString(),"normalSession",normalHours(),"ordersEnabled",false,"accessTokenPresent",LIVE,"refreshSeconds",12,"connectionStatus",UPSTOX?"Configured; quote connection checked when chain loads":"Not verified at startup","riskNote","Analysis and paper trading only. No accuracy guarantee.","copilotCloudAvailable",PulseCopilot.cloudEnabled());}
+    static Map<String,Object> status(){ZonedDateTime t=ZonedDateTime.now(IST);return map("mode",LIVE?"LIVE":"DEMO","provider",PROVIDER,"asOf",t.toString(),"normalSession",normalHours(),"ordersEnabled",false,"accessTokenPresent",LIVE,"upstoxTokenConfigured",UPSTOX,"refreshSeconds",12,"connectionStatus",UPSTOX?"Analytics Token configured server-side; actual quote access must be verified":"PUBLIC / LOCAL DEMO: no Upstox Analytics Token configured on this server","riskNote","Analysis and paper trading only. No accuracy guarantee.","copilotCloudAvailable",PulseCopilot.cloudEnabled());}
     static boolean normalHours(){ZonedDateTime now=ZonedDateTime.now(IST);int day=now.getDayOfWeek().getValue();LocalTime t=now.toLocalTime();return day<=5&&!t.isBefore(LocalTime.of(9,15))&&t.isBefore(LocalTime.of(15,30));}
     static Map<String,Object> expiries(String exchange,String underlying){
         if(UPSTOX)return UpstoxAdapter.expiries(exchange,underlying);
