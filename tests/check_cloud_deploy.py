@@ -5,6 +5,7 @@ import json
 import os
 import time
 import urllib.request
+import urllib.error
 from urllib.parse import urlparse
 
 SITE=os.environ.get('PUBLIC_SITE_URL','https://marketpulse-hackathon.onrender.com').rstrip('/')
@@ -17,15 +18,31 @@ def get(path):
     with urllib.request.urlopen(req,timeout=85) as response:
         return response.read().decode('utf-8')
 
+def expect_private_auth(path):
+    try:
+        get(path)
+    except urllib.error.HTTPError as err:
+        assert err.code == 401, f'Private route {path} returned HTTP {err.code}, expected 401'
+        assert 'Basic' in err.headers.get('WWW-Authenticate',''), 'Private route must require HTTP Basic authentication'
+        return
+    raise AssertionError(f'Private Upstox service exposed {path} without authentication')
+
 def check():
     health=json.loads(get('/api/health'))
+    assert health.get('ok') is True, 'Health endpoint unhealthy'
+    if health.get('mode')=='LIVE':
+        # Do not pass a real token or password to CI. Validate only that the
+        # web-facing service is LOCKED and all sensitive routes return 401.
+        for path in ('/','/api/status','/api/ml/status','/api/india-heatmap/page?exchange=NSE','/chart-terminal-pro.js'):
+            expect_private_auth(path)
+        print('PASS: privately password-protected LIVE Render service, no unauthorized market data access')
+        return
+    assert health.get('mode')=='DEMO', 'Unknown hosted data mode'
     status=json.loads(get('/api/status'))
     ml=json.loads(get('/api/ml/status'))
     ui=get('/')
     chart_js=get('/chart-terminal-pro.js')
     signal_js=get('/momentum-signals.js')
-    assert health.get('ok') is True, 'Health endpoint unhealthy'
-    assert health.get('mode')=='DEMO', 'A public service must never expose live broker market data'
     assert status.get('mode')=='DEMO' and status.get('ordersEnabled') is False, 'Public demo cannot execute broker orders'
     assert ml.get('ready') is False, 'No unverified/synthetic trained-model artifact should be hosted publicly'
     assert 'PRO RESEARCH TERMINAL • V10' in ui and 'RESEARCH DESK / V10' in ui, 'Hosted UI is still using old branding'
@@ -51,5 +68,5 @@ if __name__=='__main__':
         except Exception as e:
             print(f'Attempt {i}/{attempts}: {type(e).__name__}: {e}',flush=True)
             if i==attempts:
-                raise SystemExit('Hosted app did not reach the verified V11 signal-audit synthetic showcase state.')
+                raise SystemExit('Hosted app did not reach a safe DEMO or authenticated LIVE state.')
             time.sleep(25)
