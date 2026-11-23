@@ -6,7 +6,7 @@
  const number=x=>Number(x||0).toLocaleString('en-IN');
  const price=x=>x==null?'—':'₹'+Number(x).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
  const change=x=>x==null?'NO QUOTE':(x>=0?'+':'')+Number(x).toFixed(2)+'%';
- const state={exchange:'NSE',page:1,size:100,sort:'mosaic',query:'',series:'ALL',preview:false,seq:0,data:null};
+ const state={exchange:'NSE',view:'leaders',page:1,size:100,sort:'mosaic',query:'',series:'ALL',preview:false,seq:0,data:null};
  let debounce;
  const buckets=['A–D','E–H','I–M','N–R','S–Z','Other'];
  function group(symbol,sector){
@@ -64,6 +64,13 @@
    container.append(section);
   }
  }
+ function breadth(j){
+  const el=$('ihBreadth');if(!el)return;
+  const quoted=(j.items||[]).filter(x=>Number.isFinite(Number(x.changePct))&&x.changePct!=null);
+  const up=quoted.filter(x=>Number(x.changePct)>0).length,down=quoted.filter(x=>Number(x.changePct)<0).length;
+  const flat=quoted.length-up-down;
+  el.textContent=(j.view==='leaders'?'CURATED WATCHLIST':'FULL EQUITY ATLAS')+'  ·  '+up+' advancing  /  '+down+' declining  /  '+flat+' unchanged  ·  '+(j.mode==='LIVE'?'Real quotes on visible page only':'No live quotes');
+ }
  function tabs(){
   document.querySelectorAll('[data-market-exchange]').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.marketExchange===state.exchange)));
  }
@@ -80,7 +87,8 @@
    $('ihQuoted').textContent=j.quoteCount+' / '+j.items.length;
    $('ihFresh').textContent=j.freshQuoteCount+' / '+j.quoteCount;
    $('ihProvenance').textContent=(j.quoteError||j.quoteScope)+' · '+j.areaMeaning;
-   $('ihMode').textContent=j.quoteCount?'UPSTOX · '+j.quoteCount+' VERIFIED QUOTES':'UPSTOX · CATALOGUE / NO QUOTES';
+   $('ihMode').textContent=j.quoteCount?'UPSTOX · '+j.quoteCount+' QUOTED':'UPSTOX · CATALOGUE / NO QUOTES';
+   breadth(j);
    render();
   }catch(e){
    if(seq!==state.seq)return;
@@ -92,13 +100,16 @@
   if(!$('ihMosaic'))return;const seq=++state.seq;tabs();
   $('ihMosaic').innerHTML='<div class="ih-message">Loading '+esc(state.exchange)+' full instrument catalogue…</div>';
   $('ihRefresh').disabled=true;
-  const q=new URLSearchParams({exchange:state.exchange,page:state.page,limit:state.size,sort:state.sort,query:state.query,type:state.series,quotes:'false'});
+  const q=new URLSearchParams({exchange:state.exchange,view:state.query?'all':state.view,page:state.page,limit:state.size,sort:state.sort,query:state.query,type:state.series,quotes:'false'});
   try{
    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),90000);
    let response;
    try{response=await fetch('/api/india-heatmap/page?'+q,{cache:'no-store',signal:controller.signal});}finally{clearTimeout(timer);}
    const result=await response.json();if(!response.ok)throw Error(result.error||'Provider request failed');
    if(seq!==state.seq)return;state.data=result;
+   if(!state.query&&state.view==='leaders'&&result.view==='all'){
+    state.view='all';$('ihView').value='all';
+   }
    $('ihMode').textContent=result.mode==='LIVE'?'UPSTOX · LOADING QUOTES':'BOD CATALOGUE · NO LIVE QUOTES';
    $('ihCount'+result.exchange).textContent=number(result.catalogueCount);
    $('ihTotal').textContent=number(result.catalogueCount);
@@ -106,6 +117,7 @@
    $('ihQuoted').textContent=result.quoteCount+' / '+result.items.length;
    $('ihFresh').textContent=result.freshQuoteCount+' / '+result.quoteCount;
    $('ihProvenance').textContent=(result.quoteError||result.quoteScope)+' · '+result.areaMeaning;
+   breadth(result);
    $('ihPage').textContent='Page '+result.page+' / '+Math.max(1,result.totalPages);
    $('ihJump').value=result.page;$('ihJump').max=Math.max(1,result.totalPages);
    $('ihFirst').disabled=$('ihPrev').disabled=result.page<=1;
@@ -125,12 +137,13 @@
   const old=localStorage.getItem('marketpulse_india_exchange');if(old==='BSE')state.exchange='BSE';
   root.innerHTML=[
    '<header class="ih-head"><div><span class="ih-overline">MARKETPULSE · NSE & BSE · FULL EQUITY CATALOGUE</span>',
-   '<h1>Indian Stock Heatmap</h1><p>A professional treemap-style view of every provider-listed equity-segment instrument, with a separate NSE and BSE workspace.</p></div>',
+   '<h1>Market Heatmap</h1><p>Curated major-symbols watch basket for fast scanning, plus the searchable, complete NSE/BSE equity catalogue. Colors come from verified quote snapshots — never synthetic by default.</p></div>',
    '<span id="ihMode" class="ih-mode">CATALOGUE LOADING</span></header>',
    '<div class="ih-layout"><main class="ih-panel"><div class="ih-controls">',
    '<div class="ih-tabs" role="tablist"><button role="tab" data-market-exchange="NSE">NSE <b id="ihCountNSE">—</b></button>',
    '<button role="tab" data-market-exchange="BSE">BSE <b id="ihCountBSE">—</b></button></div>',
-   '<input id="ihSearch" maxlength="80" placeholder="Search any company, symbol or ISIN" aria-label="Search entire stock catalogue">',
+   '<select id="ihView" aria-label="Choose heatmap universe"><option value="leaders">Major symbols · watch basket</option><option value="all">All listed instruments</option></select>',
+   '<input id="ihSearch" maxlength="80" placeholder="Search company, symbol or ISIN · searches all stocks" aria-label="Search entire stock catalogue">',
    '<select id="ihSort" aria-label="Layout order"><option value="mosaic">Market mosaic</option><option value="alpha">A–Z</option></select>',
    '<select id="ihSize" aria-label="Tiles per page"><option value="60">60 tiles</option><option value="100" selected>100 tiles</option><option value="140">140 tiles</option></select>',
    '<button id="ihRefresh">↻ Refresh</button></div>',
@@ -138,12 +151,13 @@
    '<div><small>QUOTED / SHOWN</small><b id="ihQuoted">—</b></div><div><small>FRESH / QUOTED</small><b id="ihFresh">—</b></div>',
    '<div class="ih-legend"><i class="ih-green"></i> Rise <i class="ih-red"></i> Fall <i class="ih-gray"></i> No quote</div></div>',
    '<div class="ih-note"><span id="ihProvenance">Loading source information…</span><label><input id="ihPreview" type="checkbox"> Illustrative color preview</label></div>',
+   '<div id="ihBreadth" class="ih-breadth" aria-live="polite">Checking visible-page market breadth…</div>',
    '<div id="ihPreviewNote" class="ih-preview-note" hidden>ILLUSTRATIVE COLORS · NOT REAL RETURNS OR PRICES</div>',
    '<div id="ihMosaic" class="ih-mosaic" aria-label="Indian NSE BSE stock heatmap"><div class="ih-message">Loading listings…</div></div>',
    '<footer class="ih-pagination"><div><button id="ihFirst">« First</button><button id="ihPrev">‹ Prev</button><span id="ihPage">Page —</span>',
    '<button id="ihNext">Next ›</button><button id="ihLast">Last »</button></div>',
    '<div><label for="ihJump">Page</label><input id="ihJump" type="number" min="1" step="1" value="1"><button id="ihGo">Go</button></div></footer>',
-   '<p class="ih-disclosure">BOD catalogue lists all equity-segment instruments made available by Upstox, including some ETFs and special series; it does not establish a verified count of every Indian exchange-listed company. Only visible-page symbols receive live REST quotes when a private Upstox token is configured. Missing quotes remain gray. Tile area uses turnover proxy where available, otherwise equal area — NOT market capitalization. Alphabetical groups are used unless authenticated sector metadata exists.</p>',
+   '<p class="ih-disclosure">Major symbols is a manually curated research watch basket, not an index constituent list, sector classification, or ranking. All listed instruments still cover the provider-listed BOD equity catalogue, including ETFs and special series. Quote colors and breadth reflect only the current visible page; missing quotes stay gray. After-hours quotes are not fresh trades. Tile area uses a turnover proxy, not market capitalization.</p>',
    '</main><aside class="ih-aside"><span>UNIFIED STOCK RESEARCH</span><h2>Every listed stock is searchable.</h2>',
    '<p>Choose NSE or BSE, browse every catalogue page, then click any stock tile to open its chart, momentum signals, market depth and news.</p>',
    '<div class="ih-aside-tip" id="ihAccessNote">Catalogue data is public; quote access depends on this server&#39;s private Upstox configuration.</div>',
@@ -153,6 +167,7 @@
    if(b.dataset.marketExchange===state.exchange)return;state.exchange=b.dataset.marketExchange;localStorage.setItem('marketpulse_india_exchange',state.exchange);
    state.page=1;state.query='';$('ihSearch').value='';load();
   }));
+  $('ihView').addEventListener('change',e=>{state.view=e.target.value;state.page=1;load();});
   $('ihSearch').addEventListener('input',e=>{clearTimeout(debounce);debounce=setTimeout(()=>{state.query=e.target.value.trim();state.page=1;load();},350);});
   $('ihSort').addEventListener('change',e=>{state.sort=e.target.value;state.page=1;load();});
   $('ihSize').addEventListener('change',e=>{state.size=Number(e.target.value);state.page=1;load();});
@@ -170,7 +185,7 @@
   });
   window.addEventListener('hashchange',()=>{if(location.hash==='#indiaheatmap')load();});
   setInterval(()=>{if(location.hash==='#indiaheatmap'&&state.data?.mode==='LIVE'){
-   const q=new URLSearchParams({exchange:state.exchange,page:state.page,limit:state.size,sort:state.sort,query:state.query,type:state.series});
+   const q=new URLSearchParams({exchange:state.exchange,view:state.query?'all':state.view,page:state.page,limit:state.size,sort:state.sort,query:state.query,type:state.series});
    void enrichQuotes(state.seq,q);
   }},45000);
   if(location.hash==='#indiaheatmap')load();

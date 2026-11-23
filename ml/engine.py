@@ -77,6 +77,45 @@ def prepare(df:pd.DataFrame, horizon=HORIZON, band=RETURN_BAND, labels=True)->pd
     return all_df.reset_index(drop=True)
 
 
+
+def walk_forward_study(df:pd.DataFrame)->dict:
+    """Expanding-window historical checks, using only the training prefix per fold.
+    Classification accuracy is not a realized trade win rate.
+    """
+    cuts=[.50,.65,.80]
+    folds=[]
+    for start,end in zip(cuts[:-1],cuts[1:]):
+        train_end=df.timestamp.quantile(start)
+        test_end=df.timestamp.quantile(end)
+        past=df[df.timestamp<train_end].copy()
+        future=df[(df.timestamp>=train_end)&(df.timestamp<test_end)].copy()
+        # Training targets use future closes; purge the last HORIZON rows
+        # per instrument before the next unseen validation period.
+        past.drop(index=past.groupby('instrument_key').tail(HORIZON).index,inplace=True)
+        if len(past)<200 or len(future)<70 or len(set(past.target))<2:
+            continue
+        fold_model=HistGradientBoostingClassifier(
+            max_iter=100,max_leaf_nodes=12,learning_rate=.045,
+            l2_regularization=2.0,random_state=47)
+        fold_model.fit(past[FEATURES],past.target.astype(int))
+        pred=fold_model.predict(future[FEATURES])
+        folds.append({
+            'trainRows':int(len(past)),
+            'testRows':int(len(future)),
+            'testFrom':str(future.timestamp.min()),
+            'testTo':str(future.timestamp.max()),
+            'accuracy':round(float(accuracy_score(future.target,pred)),4),
+            'balancedAccuracy':round(float(balanced_accuracy_score(future.target,pred)),4),
+            'majorityBaseline':round(float(future.target.value_counts(normalize=True).max()),4)
+        })
+    total=sum(f['testRows'] for f in folds)
+    return {
+        'folds':folds,'foldCount':len(folds),
+        'weightedAccuracy':round(sum(f['accuracy']*f['testRows'] for f in folds)/total,4) if total else None,
+        'weightedBalancedAccuracy':round(sum(f['balancedAccuracy']*f['testRows'] for f in folds)/total,4) if total else None,
+        'notice':'Expanding-window classification checks only; not optimized strategy returns, no live execution evidence.'
+    }
+
 def train(csv_path:Path, source_label='USER_CSV_UNVERIFIED', min_rows=400, interval=15):
     csv_path=Path(csv_path)
     data=pd.read_csv(csv_path)
@@ -122,6 +161,7 @@ def train(csv_path:Path, source_label='USER_CSV_UNVERIFIED', min_rows=400, inter
     net=gross-cost_bps/10000.0
     baseline=float(test.target.value_counts(normalize=True).max())
     metrics={
+        'walkForward':walk_forward_study(df),
         'totalFeatureRows':len(df),'trainRows':len(train),'validationRows':len(val),'testRows':len(test),
         'uniqueDays':days,'instruments':int(df.instrument_key.nunique()),'forecastBars':HORIZON,'movementBandPct':round(RETURN_BAND*100,3),
         'testAccuracy':round(float(accuracy_score(test.target,predt)),4),

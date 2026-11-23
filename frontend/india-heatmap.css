@@ -59,3 +59,23 @@
 @media(max-width:1250px){.ih-layout{grid-template-columns:1fr}.ih-aside{position:static}}
 @media(max-width:920px){.ih-mosaic{grid-template-columns:repeat(2,minmax(0,1fr))}.ih-stats{grid-template-columns:repeat(4,minmax(0,1fr))}.ih-legend{grid-column:1/-1}}
 @media(max-width:600px){.ih-head{align-items:start;flex-direction:column}.ih-mosaic{grid-template-columns:1fr;grid-auto-rows:210px}.ih-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.ih-tabs{width:100%}.ih-tabs button{flex:1}.ih-controls input{flex-basis:100%}.ih-pagination>div{flex-wrap:wrap}}
+
+/* V11: keep the atlas fluid rather than leaving two thirds of the viewport empty. */
+.ih-mosaic:has(>.ih-group:only-of-type){grid-template-columns:minmax(0,1fr);grid-auto-rows:minmax(570px,1fr)}
+.ih-mosaic:has(>.ih-group:only-of-type) .ih-group-map{min-height:540px}
+.ih-mosaic:has(>.ih-group:only-of-type) .ih-tile strong{font-size:clamp(9px,.9vw,14px)}
+.ih-mosaic:has(>.ih-group:only-of-type) .ih-group{min-height:580px}
+.ih-group{background:#0b1e2b;border-radius:8px;transition:border-color .15s;box-shadow:inset 0 1px #ffffff0c}
+.ih-group:hover{border-color:#487088}
+.ih-group header{height:34px;background:linear-gradient(90deg,#17394a,#132a39)}
+.ih-group header b{color:#d1e9f5;letter-spacing:.02em}
+.ih-tile{transition:filter .13s,outline-color .13s}
+.ih-breadth{background:#0c2332;padding:9px 14px;border-top:1px solid #203e52;color:#9cc7d8;font-size:11px;letter-spacing:.02em}
+#ihView{min-width:205px;max-width:260px;border-color:#267e7b;background:#12382f;color:#dcfff3;font-weight:800}
+#ihMosaic{scroll-margin-top:20px}
+@media(max-width:700px){
+ #ihView{min-width:0;max-width:none;flex:1 1 100%}
+ .ih-mosaic:has(>.ih-group:only-of-type){grid-auto-rows:minmax(440px,1fr)}
+ .ih-mosaic:has(>.ih-group:only-of-type) .ih-group{min-height:440px}
+ .ih-mosaic:has(>.ih-group:only-of-type) .ih-group-map{min-height:410px}
+}

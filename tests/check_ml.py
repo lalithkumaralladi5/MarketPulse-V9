@@ -27,6 +27,10 @@ def run():
   assert m['metrics']['testRows']>100
   assert m['metrics']['uniqueDays']>=8
   assert m['metrics']['testBalancedAccuracy']<=1
+  wf=m['metrics']['walkForward']
+  assert wf['foldCount']>=1 and len(wf['folds'])==wf['foldCount'],wf
+  assert 0<=wf['weightedBalancedAccuracy']<=1,wf
+  assert all(f['testRows']>0 and f['trainRows']>=200 for f in wf['folds'])
   study=m['metrics']['eventStudy']
   assert study['roundTripCostAssumptionBps']==30
   assert 0<=study['signalEvents']<=m['metrics']['testRows']
