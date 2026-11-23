@@ -53,7 +53,8 @@ def collect(keys,years=15,out='data/upstox_daily_long.csv',*,end=None,sleep=0.35
     if not keys or len(keys)>80:raise ValueError('Use 1-80 real listed NSE/BSE equity keys')
     if not all(EQ_KEY.fullmatch(k) for k in keys):raise ValueError('Only NSE_EQ|... or BSE_EQ|... listed keys are supported')
     if years not in (10,12,15):raise ValueError('Select 10, 12 or 15 years')
-    end=end or dt.date.today()
+    # Exclude today's potentially unfinished daily candle, even if collection runs intraday.
+    end=end or (dt.date.today()-dt.timedelta(days=1))
     start=start_years_ago(end,years)
     s=session or requests.Session()
     s.headers.update({'Authorization':'Bearer '+token,'Accept':'application/json'})
