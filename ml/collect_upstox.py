@@ -35,7 +35,7 @@ def collect(keys,days=100,interval=15,out='data/upstox_15m.csv',sleep=.45):
     with path.open('w',newline='',encoding='utf-8') as f:
         writer=csv.DictWriter(f,fieldnames=['timestamp','instrument_key','open','high','low','close','volume']);writer.writeheader()
         writer.writerows(sorted(unique.values(),key=lambda x:(x['instrument_key'],x['timestamp'])))
-    print('Saved',len(unique),'real provider candles to',path)
+    print('Saved',len(unique),'provider candles to',path)
 
 if __name__=='__main__':
     ap=argparse.ArgumentParser();ap.add_argument('--keys',nargs='+',required=True,help='Exact Upstox instrument keys');ap.add_argument('--days',type=int,default=100);ap.add_argument('--interval',type=int,choices=[1,3,5,15,30,60],default=15);ap.add_argument('--out',default='data/upstox_15m.csv')
