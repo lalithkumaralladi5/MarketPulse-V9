@@ -13,6 +13,17 @@ final class IndiaEquityHeatmap {
  private static final HttpClient HTTP=HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(9)).build();
  private static final String TEST=System.getenv().getOrDefault("MARKETPULSE_BOD_TEST_BASE","");
  private static final String BASE=TEST.matches("http://(?:127\\.0\\.0\\.1|localhost):[0-9]{2,5}")?TEST+"/":"https://assets.upstox.com/market-quote/instruments/exchange/";
+ // Curated, explicitly non-ranked watch basket: useful starting view, NOT index membership or market cap.
+ private static final List<String> LEADERS=List.of(
+  "RELIANCE","HDFCBANK","ICICIBANK","TCS","INFY","SBIN","BHARTIARTL",
+  "ITC","LT","KOTAKBANK","AXISBANK","HINDUNILVR","MARUTI","TATAMOTORS",
+  "BAJFINANCE","BAJAJFINSV","HCLTECH","WIPRO","SUNPHARMA","CIPLA",
+  "DRREDDY","TITAN","ASIANPAINT","ULTRACEMCO","NESTLEIND","NTPC",
+  "POWERGRID","ONGC","COALINDIA","M&M","ADANIPORTS","TATASTEEL",
+  "JSWSTEEL","HINDALCO","BEL","HAL","DMART","TRENT","ETERNAL","ZOMATO",
+  "INDIGO","JIOFIN","GRASIM","TECHM");
+ private static final Map<String,Integer> LEADER_ORDER=new HashMap<>();
+ static {for(int i=0;i<LEADERS.size();i++)LEADER_ORDER.put(LEADERS.get(i),i);}
  private static final Map<String,Catalog> MASTER=new ConcurrentHashMap<>();
  private static final Map<String,Quotes> QUOTE_CACHE=new ConcurrentHashMap<>();
  private static final Object CATALOG_LOCK=new Object(), QUOTE_LOCK=new Object();
@@ -134,7 +145,9 @@ final class IndiaEquityHeatmap {
  static Map<String,Object> page(Map<String,String>q){
   String exchange=ex(q),text=q.getOrDefault("query","").strip().toUpperCase(Locale.ROOT),series=q.getOrDefault("type","ALL").toUpperCase(Locale.ROOT);
   String sort=q.getOrDefault("sort","mosaic").toLowerCase(Locale.ROOT);
-  if(text.length()>80||series.length()>15||!List.of("mosaic","alpha").contains(sort))throw new MarketPulseServer.ApiException(400,"Invalid heatmap filter");
+  String view=q.getOrDefault("view","all").toLowerCase(Locale.ROOT);
+  if(text.length()>80||series.length()>15||!List.of("mosaic","alpha").contains(sort)
+     ||!List.of("all","leaders").contains(view))throw new MarketPulseServer.ApiException(400,"Invalid heatmap filter");
   int page=integer(q,"page",1,1,1_000_000),size=integer(q,"limit",100,20,140);
   Catalog c=catalogue(exchange);List<Map<String,Object>> filtered=new ArrayList<>();
   for(Map<String,Object> item:c.rows()){
@@ -144,7 +157,20 @@ final class IndiaEquityHeatmap {
    if(!series.equals("ALL")&&!s(item.get("type")).equalsIgnoreCase(series))continue;
    filtered.add(item);
   }
-  if(sort.equals("mosaic")&&text.isEmpty())filtered.sort((a,b)->Integer.compareUnsigned(hash(s(a.get("key"))),hash(s(b.get("key")))));
+  // The complete catalogue remains searchable/paged; the focus view is an explicit,
+  // curated non-ranked watch basket. Missing names are never invented.
+  if(view.equals("leaders")&&text.isEmpty()&&series.equals("ALL")){
+   List<Map<String,Object>> leaders=new ArrayList<>();
+   for(Map<String,Object> item:filtered){
+    if(LEADER_ORDER.containsKey(s(item.get("symbol")).toUpperCase(Locale.ROOT)))leaders.add(item);
+   }
+   if(!leaders.isEmpty()){
+    filtered=leaders;
+    filtered.sort(Comparator.comparingInt(a->LEADER_ORDER.getOrDefault(s(a.get("symbol")).toUpperCase(Locale.ROOT),999)));
+   } else view="all"; // Offline fixtures and catalogues with no matching leaders.
+  }
+  if(sort.equals("mosaic")&&text.isEmpty()&&view.equals("all"))filtered.sort((a,b)->Integer.compareUnsigned(hash(s(a.get("key"))),hash(s(b.get("key")))));
+  if(sort.equals("alpha"))filtered.sort(Comparator.comparing(a->s(a.get("symbol")),String.CASE_INSENSITIVE_ORDER));
   long start=((long)page-1)*size;
   List<Map<String,Object>> items=new ArrayList<>();
   for(long i=start;i<Math.min(filtered.size(),start+size);i++)items.add(new LinkedHashMap<>(filtered.get((int)i)));
@@ -156,7 +182,7 @@ final class IndiaEquityHeatmap {
    var quoted=quotes(exchange,items);
    for(var x:items){var row=quoted.get(s(x.get("key")));if(row!=null){x.putAll(row);available++;if(Boolean.TRUE.equals(row.get("fresh")))fresh++;}}
   }catch(MarketPulseServer.ApiException e){error="Provider quote batch unavailable; missing prices remain neutral.";}
-  return map("mode",live?"LIVE":"DEMO","exchange",exchange,"catalogue","UPSTOX_BOD",
+  return map("mode",live?"LIVE":"DEMO","exchange",exchange,"view",view,"watchlistScope",view.equals("leaders")?"Curated NSE/BSE symbols, not an index-constituent or market-cap ranking":"All provider-listed equity-segment instruments","catalogue","UPSTOX_BOD",
    "catalogueCount",c.rows().size(),"matchedCount",filtered.size(),"page",page,"limit",size,
    "totalPages",(filtered.size()+size-1)/size,"items",items,"quoteCount",available,
    "freshQuoteCount",fresh,"asOf",c.downloaded(),"quoteError",error,
