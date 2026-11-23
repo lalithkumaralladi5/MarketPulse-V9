@@ -87,6 +87,10 @@ def main():
             proc=start(mode,port)
             try:
                 assert proc.poll() is None,'Server failed to start'
+                # Reverse-proxy HEAD health probes must not write a body or trigger IOException.
+                head=urllib.request.Request(f'http://127.0.0.1:{port}/api/health',method='HEAD')
+                with urllib.request.urlopen(head,timeout=10) as response:
+                    assert response.status==200 and response.read()==b'', 'HEAD /api/health must be bodyless'
                 status,meta=get(port,'/api/status');assert status==200 and meta['provider']==('Upstox' if mode=='upstox' else 'Synthetic demo'),meta
                 status,dates=get(port,'/api/expiries?exchange=NSE&underlying=NIFTY');assert status==200 and len(dates['expiries'])>0,dates
                 date=EXP if mode=='upstox' else dates['expiries'][0]
