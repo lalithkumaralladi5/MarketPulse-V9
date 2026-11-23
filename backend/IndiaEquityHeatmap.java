@@ -39,7 +39,7 @@ final class IndiaEquityHeatmap {
     HttpRequest req=HttpRequest.newBuilder(URI.create(BASE+exchange+".json.gz"))
         .timeout(Duration.ofSeconds(38)).header("Accept","application/octet-stream").GET().build();
     HttpResponse<InputStream> res=HTTP.send(req,HttpResponse.BodyHandlers.ofInputStream());
-    if(res.statusCode()!=200){try(res.body()){throw new IOException("BOD HTTP "+res.statusCode());}}
+    if(res.statusCode()!=200){try(InputStream failed=res.body()){throw new IOException("BOD HTTP "+res.statusCode());}}
     Map<String,Map<String,Object>> unique=new LinkedHashMap<>();
     // Decode one JSON object at a time. Keep only equity records, not hundreds
     // of thousands of FO records or a full uncompressed JSON tree.
