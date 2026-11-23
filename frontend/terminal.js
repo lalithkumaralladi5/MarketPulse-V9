@@ -51,7 +51,7 @@ async function loadChart(){if(!state.instrument)return;const id=++state.chartReq
   draw();updateSignal();window.dispatchEvent(new CustomEvent('marketpulse:candles',{detail:{key:inst.key,bars:state.history.length,mode:j.mode}}));
  }catch(e){if(id!==state.chartRequest)return;state.history=[];state.chart=null;draw();$('v8ChartStatus').textContent='CANDLE ERROR';$('v8ChartStatus').dataset.kind='bad';banner('Chart: '+e.message,'error');updateSignal();}
 }
-async function loadQuote(){if(!state.instrument||state.option)return;const id=++state.quoteRequest,k=state.instrument.key;
+async function loadQuote(){if(!state.instrument)return;const id=++state.quoteRequest,k=state.instrument.key;
  try{
   const j=await json(ep('/api/universe/quote',{key:k}));if(id!==state.quoteRequest)return;state.quote=j;
   displayQuote(j);
