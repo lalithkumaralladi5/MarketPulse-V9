@@ -39,5 +39,45 @@
   }
   return {markers,latest:markers.at(-1)||null,closedCount:closed.length,regime:state};
  }
- return {compute};
+ // An educational, next-completed-bar-open diagnostic. Does not simulate broker fills,
+ // taxes, slippage variation, stop orders or a reinvested portfolio.
+ function audit(candles, result, roundTripCostBps=30){
+  const empty={events:[],completedEvents:0,netPositiveShare:null,meanNetMovePct:null,
+    openPositionNotEvaluated:false,assumedRoundTripCostBps:30};
+  if(!Array.isArray(candles)||!result||!Array.isArray(result.markers))return empty;
+  const n=Math.min(Math.max(0,Number(result.closedCount)||0),Math.max(0,candles.length-1));
+  const bps=Number.isFinite(+roundTripCostBps)?Math.min(300,Math.max(0,+roundTripCostBps)):30;
+  const events=[];let position=null;
+  for(const m of result.markers){
+   if(!Number.isInteger(m.index)||m.index<0||m.index>=n)continue;
+   // An observation at completed bar i cannot be hypothetically filled until
+   // the open of bar i+1, and that bar must ALSO be completed.
+   const fillIndex=m.index+1;
+   if(fillIndex>=n)continue;
+   const bar=candles[fillIndex];
+   const fill=Number(bar?.open);
+   if(!Number.isFinite(fill)||fill<=0)continue;
+   if(m.type==='BUY'||m.type==='SELL'){
+    if(!position)position={type:m.type,entry:fill,entryIndex:fillIndex,
+      observedAt:String(m.time||''),hypotheticalFillAt:String(bar.time||'')};
+   }else if(m.type==='EXIT'&&position){
+    const side=position.type==='BUY'?1:-1;
+    const gross=side*(fill/position.entry-1);
+    const net=gross-bps/10000;
+    events.push({type:position.type,entrySignalAt:position.observedAt,
+      exitSignalAt:String(m.time||''),entryFillAt:position.hypotheticalFillAt,
+      exitFillAt:String(bar.time||''),entryPrice:position.entry,exitPrice:fill,
+      barsHeld:fillIndex-position.entryIndex,netMovePct:Number((net*100).toFixed(4)),
+      grossMovePct:Number((gross*100).toFixed(4)),costBps:bps});
+    position=null;
+   }
+  }
+  const positive=events.filter(x=>x.netMovePct>0).length;
+  const average=events.length?events.reduce((sum,x)=>sum+x.netMovePct,0)/events.length:null;
+  return {events,completedEvents:events.length,
+   netPositiveShare:events.length?Number((positive/events.length).toFixed(4)):null,
+   meanNetMovePct:average==null?null:Number(average.toFixed(4)),
+   openPositionNotEvaluated:!!position,assumedRoundTripCostBps:bps};
+ }
+ return {compute,audit};
 });
