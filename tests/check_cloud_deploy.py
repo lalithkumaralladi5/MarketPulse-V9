@@ -30,9 +30,17 @@ def check():
     assert ml.get('ready') is False, 'No unverified/synthetic trained-model artifact should be hosted publicly'
     assert 'PRO RESEARCH TERMINAL • V10' in ui and 'RESEARCH DESK / V10' in ui, 'Hosted UI is still using old branding'
     assert 'LOCALHOST ONLY' not in ui, 'Hosted UI shows a misleading localhost label'
+    heatmap_js=get('/india-heatmap.js')
+    assert 'marketpulse_india_exchange' in heatmap_js and 'ihMosaic' in heatmap_js, 'Hosted UI missing Indian stock heatmap'
+    nse=json.loads(get('/api/india-heatmap/page?exchange=NSE&limit=20&sort=alpha'))
+    bse=json.loads(get('/api/india-heatmap/page?exchange=BSE&limit=20&sort=alpha'))
+    for market,board in [('NSE',nse),('BSE',bse)]:
+        assert board['exchange']==market and board['mode']=='DEMO', market
+        assert board['catalogueCount']>500 and len(board['items'])==20, 'Not a full '+market+' equity catalogue'
+        assert board['quoteCount']==0 and all('changePct' not in row for row in board['items']), 'Public stock returns must not be invented'
     assert 'v11Audit' in chart_js and "['audit','Audit']" in chart_js, 'Hosted chart has not deployed the new Signal Audit tab'
     assert 'return {compute,audit}' in signal_js, 'Hosted momentum engine is an older release without event auditing'
-    print('PASS: public V10 chart + Signal Audit V11, healthy API, guarded DEMO data and ML status')
+    print('PASS: public NSE/BSE BOD catalogues, chart + audit, API, synthetic-data safety')
 
 if __name__=='__main__':
     attempts=int(os.environ.get('CLOUD_CHECK_ATTEMPTS','8'))

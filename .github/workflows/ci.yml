@@ -43,6 +43,8 @@ jobs:
         run: node tests/check_momentum_signals.cjs
       - name: Offline API, Copilot, search and Upstox adapter regression suite
         run: bash tests/ci_smoke.sh
+      - name: Full NSE/BSE equity catalogues and page-scoped market quote tests
+        run: python tests/check_india_heatmap.py
 
   browser:
     runs-on: ubuntu-latest
@@ -70,6 +72,8 @@ jobs:
         run: python tests/check_v8_browser.py 8876
       - name: Test chart-first workspace and historical signal annotations
         run: python tests/check_chart_pro.py 8876
+      - name: Test full NSE/BSE heatmap tabs, search, navigation and stock opening
+        run: python tests/check_india_heatmap.py --browser
       - name: Upload browser screenshots on failure
         if: failure()
         uses: actions/upload-artifact@v4
