@@ -39,6 +39,21 @@ with sync_playwright() as playwright:
  page.locator('#v8HeatTiles [data-heat="0"]').wait_for(timeout=15000)
  page.locator('#v8HeatTiles [data-heat="0"]').click()
  assert page.locator('#view-chart').is_visible()
+ # A live-looking trading workflow must remain simulated, persist a journal,
+ # and never offer brokerage order submission.
+ page.locator('.sidebar a[href="#tradingdesk"]').click()
+ assert page.locator('#view-tradingdesk').is_visible()
+ page.wait_for_function("() => document.getElementById('deskStatus')?.dataset.kind === 'demo'",timeout=12000)
+ page.locator('#deskStop').fill('0.1')
+ page.locator('#deskQuantity').fill('1')
+ page.locator('#deskExecute').click()
+ assert 'BUY' in page.locator('#deskJournal').inner_text()
+ page.locator('#deskSide').select_option('SELL')
+ page.locator('#deskExecute').click()
+ assert 'SELL' in page.locator('#deskJournal').inner_text()
+ page.reload(wait_until='domcontentloaded')
+ page.locator('#view-tradingdesk').wait_for(state='visible',timeout=12000)
+ assert 'BUY' in page.locator('#deskJournal').inner_text(), 'Paper ledger should survive reload'
  page.locator('.sidebar a[href="#news"]').click()
  assert page.locator('#view-news').is_visible()
  page.locator('#v8NewsItems .v8-empty').wait_for(timeout=12000)
