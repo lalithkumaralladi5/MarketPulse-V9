@@ -34,29 +34,18 @@ final class IndiaEquityHeatmap {
   synchronized(CATALOG_LOCK){
    cached=MASTER.get(exchange);if(cached!=null&&cached.expiry>System.currentTimeMillis())return cached;
    try{
-    HttpRequest req=HttpRequest.newBuilder(URI.create(BASE+exchange+".json.gz")).timeout(Duration.ofSeconds(25)).GET().build();
-    HttpResponse<byte[]> res=HTTP.send(req,HttpResponse.BodyHandlers.ofByteArray());
-    if(res.statusCode()!=200||res.body().length>35_000_000)throw new IOException("BOD unavailable or exceeds limit");
-    ByteArrayOutputStream out=new ByteArrayOutputStream();
-    try(InputStream in=new GZIPInputStream(new ByteArrayInputStream(res.body()))){
-     byte[] buf=new byte[16384];int z;
-     while((z=in.read(buf))!=-1){out.write(buf,0,z);if(out.size()>110_000_000)throw new IOException("BOD exceeds safe uncompressed size");}
-    }
-    // Parse one instrument at a time, rather than materializing a huge JSON object graph.
-    MarketPulseServer.Json p=new MarketPulseServer.Json(out.toString(StandardCharsets.UTF_8));
-    if(p.ch()!='[')throw new IOException("Unexpected JSON shape");p.i++;
+    // The NSE/BSE files contain many derivatives. Never decompress the entire
+    // master into a giant String: on the 192 MB Render JVM that can exhaust heap.
+    HttpRequest req=HttpRequest.newBuilder(URI.create(BASE+exchange+".json.gz"))
+        .timeout(Duration.ofSeconds(38)).header("Accept","application/octet-stream").GET().build();
+    HttpResponse<InputStream> res=HTTP.send(req,HttpResponse.BodyHandlers.ofInputStream());
+    if(res.statusCode()!=200){try(res.body()){throw new IOException("BOD HTTP "+res.statusCode());}}
     Map<String,Map<String,Object>> unique=new LinkedHashMap<>();
-    while(p.ch()!=']'){
-     Map<String,Object> row=p.obj();
-     if((exchange+"_EQ").equals(s(row.get("segment")))){
-      String key=s(row.get("instrument_key")),symbol=s(row.get("trading_symbol")),name=s(row.get("name"));
-      if(key.matches("(?:NSE|BSE)_EQ\\|[A-Za-z0-9._ -]{1,78}")&&!symbol.isBlank()&&symbol.length()<=70&&name.length()<=180){
-       String industry=s(row.getOrDefault("sector",row.getOrDefault("industry","")));
-       unique.putIfAbsent(key,map("key",key,"symbol",symbol,"name",name,"exchange",exchange,"segment",exchange+"_EQ",
-        "type",s(row.get("instrument_type")),"isin",s(row.get("isin")),"sector",industry.isBlank()?"UNCLASSIFIED":industry));
-      }
-     }
-     char delim=p.ch();p.i++;if(delim==']')break;if(delim!=',')throw new IOException("Invalid BOD separator");
+    // Decode one JSON object at a time. Keep only equity records, not hundreds
+    // of thousands of FO records or a full uncompressed JSON tree.
+    try(InputStream body=res.body();
+        Reader in=new BufferedReader(new InputStreamReader(new GZIPInputStream(body),StandardCharsets.UTF_8),16384)){
+     streamEquities(in,exchange,unique);
     }
     if(unique.isEmpty())throw new IOException("No equity-segment instruments present");
     List<Map<String,Object>> rows=new ArrayList<>(unique.values());
@@ -67,6 +56,51 @@ final class IndiaEquityHeatmap {
     catch(IOException|IllegalArgumentException e){System.err.println("NSE/BSE catalogue refresh failure: "+e.getClass().getSimpleName());}
    if(cached!=null)return cached;
    throw new MarketPulseServer.ApiException(503,"Upstox equity instrument catalogue unavailable; no sample substituted.");
+  }
+ }
+ /** Bounded streaming reader for Upstox's top-level JSON array of instruments.
+  * Handles strings/escapes and nested objects without holding the entire BOD.
+  */
+ static void streamEquities(Reader in,String exchange,Map<String,Map<String,Object>> unique) throws IOException {
+  PushbackReader reader=new PushbackReader(in,2);
+  int first=reader.read();while(first!=-1&&Character.isWhitespace(first))first=reader.read();
+  if(first!='[')throw new IOException("Unexpected instrument master JSON shape");
+  long totalChars=0;int value;
+  while(true){
+   value=reader.read();
+   while(value!=-1&&(Character.isWhitespace(value)||value==','))value=reader.read();
+   if(value==']')break;
+   if(value!='{')throw new IOException("Unexpected BOD instrument record");
+   StringBuilder obj=new StringBuilder(800);obj.append('{');
+   int depth=1;boolean quoted=false,escaped=false;
+   while(depth>0){
+    int ch=reader.read();
+    if(ch<0)throw new IOException("Truncated BOD instrument");
+    char c=(char)ch;obj.append(c);
+    if(obj.length()>100_000)throw new IOException("Unreasonably large BOD record");
+    if(quoted){
+     if(escaped)escaped=false;
+     else if(c=='\\\\')escaped=true;
+     else if(c=='"')quoted=false;
+    }else if(c=='"')quoted=true;
+    else if(c=='{')depth++;
+    else if(c=='}')depth--;
+   }
+   totalChars+=obj.length();
+   if(totalChars>200_000_000L)throw new IOException("BOD exceeds bounded stream size");
+   // Fast skip of massive derivatives catalogue before any JSON map allocation.
+   if(obj.indexOf("\""+exchange+"_EQ\"")<0)continue;
+   Map<String,Object> row;
+   try{row=MarketPulseServer.asMap(MarketPulseServer.Json.parse(obj.toString()));}
+   catch(RuntimeException bad){throw new IOException("Malformed BOD equity record");}
+   if(!(exchange+"_EQ").equals(s(row.get("segment"))))continue;
+   String key=s(row.get("instrument_key")),symbol=s(row.get("trading_symbol")),name=s(row.get("name"));
+   if(key.matches("(?:NSE|BSE)_EQ\\\\|[A-Za-z0-9._ -]{1,78}")&&!symbol.isBlank()&&symbol.length()<=70&&name.length()<=180){
+    String industry=s(row.getOrDefault("sector",row.getOrDefault("industry","")));
+    unique.putIfAbsent(key,map("key",key,"symbol",symbol,"name",name,"exchange",exchange,
+      "segment",exchange+"_EQ","type",s(row.get("instrument_type")),"isin",s(row.get("isin")),
+      "sector",industry.isBlank()?"UNCLASSIFIED":industry));
+   }
   }
  }
  private static Map<String,Map<String,Object>> quotes(String exchange,List<Map<String,Object>> rows){
