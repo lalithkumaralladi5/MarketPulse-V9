@@ -48,10 +48,11 @@ final class MarketUniverse {
         }
         return map("mode",UpstoxAdapter.enabled()?"LIVE":"DEMO","provider",UpstoxAdapter.enabled()?"Upstox":"Synthetic demo","instruments",list,"count",list.size(),"note","Search covers only contracts returned by the provider, not guaranteed all exchange listings.");
     }
-    static Map<String,Object> quote(Map<String,String> q){
+    static Map<String,Object> quote(Map<String,String> q){return quote(q,5_000);}
+    static Map<String,Object> quote(Map<String,String> q,long ttlMs){
         String ik=key(q);
         if(!UpstoxAdapter.enabled())return demoQuote(ik);
-        Map<String,Object> raw=UpstoxAdapter.fullQuote(ik);
+        Map<String,Object> raw=UpstoxAdapter.fullQuote(ik,ttlMs);
         long last=UpstoxAdapter.toMillis(raw.get("last_trade_time"));
         long snap=UpstoxAdapter.toMillis(raw.get("timestamp"));
         long timestamp=last>0?last:snap;
