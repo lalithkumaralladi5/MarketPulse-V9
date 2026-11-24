@@ -14,6 +14,28 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  render-docker-image:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the exact Render Docker image
+        run: docker build --tag marketpulse:render-ci .
+      - name: Start container and verify Live Terminal release
+        run: |
+          docker run -d --name marketpulse-render-ci -p 18087:10000 marketpulse:render-ci
+          trap 'docker logs marketpulse-render-ci; docker rm -f marketpulse-render-ci' EXIT
+          READY=0
+          for i in $(seq 1 50); do
+            if curl -fsS http://127.0.0.1:18087/api/health -o /tmp/marketpulse-render-health.json; then
+              READY=1
+              break
+            fi
+            sleep 2
+          done
+          test "$READY" = "1"
+          python3 -c 'import json; x=json.load(open("/tmp/marketpulse-render-health.json")); assert x["ok"] and x["release"]=="Live Terminal r1" and x["liveStream"]=="SSE_REST" and x["mode"]=="DEMO",x'
+          curl -fsS http://127.0.0.1:18087/live-terminal.js -o /dev/null
   api-and-ml:
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -101,7 +123,7 @@ jobs:
           if-no-files-found: ignore
 
   public-deployment:
-    needs: [api-and-ml, browser]
+    needs: [api-and-ml, browser, render-docker-image]
     runs-on: ubuntu-latest
     timeout-minutes: 12
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
