@@ -30,11 +30,11 @@ def expect_private_auth(path):
 def check():
     health=json.loads(get('/api/health'))
     assert health.get('ok') is True, 'Health endpoint unhealthy'
-    assert health.get('release')=='Live Terminal r1' and health.get('liveStream')=='SSE_REST', 'Render has not deployed the Live Terminal release'
+    assert health.get('release')=='MarketPulse V12 Global Chart' and health.get('liveStream')=='SSE_REST', 'Render has not deployed MarketPulse V12 global/chart release'
     if health.get('mode')=='LIVE':
         # Do not pass a real token or password to CI. Validate only that the
         # web-facing service is LOCKED and all sensitive routes return 401.
-        for path in ('/','/api/status','/api/ml/status','/api/india-heatmap/page?exchange=NSE','/chart-terminal-pro.js','/live-terminal.js','/api/live/stream?key=NSE_EQ%7CINE002A01018'):
+        for path in ('/','/api/status','/api/ml/status','/api/india-heatmap/page?exchange=NSE','/chart-terminal-pro.js','/live-terminal.js','/global-market.js','/api/live/stream?key=NSE_EQ%7CINE002A01018'):
             expect_private_auth(path)
         print('PASS: privately password-protected LIVE Render service, no unauthorized market data access')
         return
