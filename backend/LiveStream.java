@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 final class LiveStream {
     private static final AtomicInteger CONNECTIONS = new AtomicInteger();
-    private static final int MAX_CONNECTIONS = 3;
+    private static final int MAX_CONNECTIONS = 4; // bounded by the server's eight-worker pool
     private static final long MAX_DURATION = 120_000L;
     private static final long POLL = 3_000L; // quota-conscious REST polling
     private LiveStream(){}
