@@ -74,6 +74,9 @@ def run():
         assert all('Authorization' not in json.dumps(e) and TOKEN not in json.dumps(e) for _,e in feed)
         assert statuses[0]['fresh']==statuses[0]['marketOpen']
         STATE['fail']=True
+        # Let the deliberately short legitimate quote cache expire before asserting
+        # a provider outage. A cached successful quote is not a fabricated tick.
+        time.sleep(3.5)
         failure=events(18893,3,18)
         assert any(typ=='status' and d.get('error') for typ,d in failure),failure
         assert not any(typ=='tick' for typ,_ in failure[2:]),'Never synthesize live data on provider failure'
