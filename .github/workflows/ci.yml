@@ -77,6 +77,8 @@ jobs:
         run: bash tests/ci_smoke.sh
       - name: Live SSE exchange-timestamp, freshness and token-isolation checks
         run: python tests/check_live_sse.py
+      - name: Offline global markets public-provider adapter and validation
+        run: python tests/check_global_market.py
       - name: Full NSE/BSE equity catalogues and page-scoped market quote tests
         run: python tests/check_india_heatmap.py
       - name: Stream a 110MB+ BOD master within the Render JVM heap limit
