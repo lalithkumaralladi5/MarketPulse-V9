@@ -48,7 +48,7 @@ public class MarketPulseServer {
         ex.getResponseHeaders().set("X-Frame-Options","DENY");
         ex.getResponseHeaders().set("Content-Security-Policy","default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; frame-ancestors 'none'");
         try {
-            if ("/api/health".equals(ex.getRequestURI().getPath())) {send(ex,200,map("ok",true,"service","MarketPulse","mode",LIVE?"LIVE":"DEMO","release","Live Terminal r1","liveStream","SSE_REST"));return;}
+            if ("/api/health".equals(ex.getRequestURI().getPath())) {send(ex,200,map("ok",true,"service","MarketPulse","mode",LIVE?"LIVE":"DEMO","release","MarketPulse V12 Global Chart","liveStream","SSE_REST"));return;}
             if (!authorized(ex)) return;
             if ("/api/copilot".equals(ex.getRequestURI().getPath())) { PulseCopilot.handle(ex); return; }
             if (!"GET".equals(ex.getRequestMethod())) {send(ex,405,Map.of("error","Only GET supported"));return;}

@@ -34,8 +34,9 @@ jobs:
             sleep 2
           done
           test "$READY" = "1"
-          python3 -c 'import json; x=json.load(open("/tmp/marketpulse-render-health.json")); assert x["ok"] and x["release"]=="Live Terminal r1" and x["liveStream"]=="SSE_REST" and x["mode"]=="DEMO",x'
+          python3 -c 'import json; x=json.load(open("/tmp/marketpulse-render-health.json")); assert x["ok"] and x["release"]=="MarketPulse V12 Global Chart" and x["liveStream"]=="SSE_REST" and x["mode"]=="DEMO",x'
           curl -fsS http://127.0.0.1:18087/live-terminal.js -o /dev/null
+          curl -fsS http://127.0.0.1:18087/global-market.js -o /dev/null
   api-and-ml:
     runs-on: ubuntu-latest
     timeout-minutes: 20
