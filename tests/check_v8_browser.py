@@ -68,7 +68,7 @@ with sync_playwright() as playwright:
  assert page.locator('#gmCanvas').count()==1
  page.locator('.sidebar a[href="#quality"]').click()
  assert page.locator('#view-quality').is_visible()
- page.locator('#gmHealth').get_by_text('RUNNING',exact=False).wait_for(timeout=12000) if False else page.wait_for_function("() => document.getElementById('gmHealth').textContent.includes('HEALTHY')",timeout=12000)
+ page.wait_for_function("() => document.getElementById('gmHealth').textContent.includes('HEALTHY')",timeout=12000)
  page.locator('.sidebar a[href="#live"]').click()
  assert page.locator('#ltZoomIn').is_visible()
  page.locator('#ltZoomIn').click()
