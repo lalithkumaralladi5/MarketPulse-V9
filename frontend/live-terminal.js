@@ -4,6 +4,7 @@
  * A statistical forecast is a hypothesis, NOT a trained or calibrated ML probability.
  */
 (()=>{
+ const boot=()=>{
  const $=id=>document.getElementById(id), view=$('view-live');if(!view)return;
  const html=s=>String(s??'').replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]));
  const money=n=>Number.isFinite(+n)?'₹'+Number(n).toLocaleString('en-IN',{maximumFractionDigits:2,minimumFractionDigits:2}):'—';
@@ -231,4 +232,6 @@
  setInterval(()=>{if(!S.synthetic&&S.fresh&&S.quoteTime&&Date.now()-S.quoteTime>FRESH_MS){S.fresh=false;S.reason='Exchange trade timestamp expired';status('bad','STALE');updatePanels();}},1000);
  window.addEventListener('resize',draw);
  if(location.hash==='#live')start();
+ };
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
