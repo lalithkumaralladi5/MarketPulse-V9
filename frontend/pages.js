@@ -7,6 +7,8 @@
   const catalog = {
     scanner:['Option Scanner','Select an expiry, strike and CE/PE contract; open the exact premium chart.','▦'],
     live:['Live Prediction Terminal','Upstox REST market snapshots, exchange-timed candles, guarded experimental forward forecasts.','⚡'],
+    global:['Global Markets','Curated US stocks, currency pairs and commodity futures with public-provider OHLC candles.','◈'],
+    quality:['Data Quality Monitor','Live quote freshness, server status and ML validation provenance.','◷'],
     intelligence:['Market Intelligence','Market breadth proxies, OI landscape and an honest historical diagnostic.','◉'],
     indiaheatmap:['Indian Stock Heatmap','Browse the complete NSE/BSE equity-segment instrument catalogue; real quotes are page-scoped.','▦'],
     flow:['Liquidity Flow Map','Interactive strike network with separate OI and displayed order-book measurements.','〰'],

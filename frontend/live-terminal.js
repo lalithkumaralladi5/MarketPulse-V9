@@ -17,14 +17,14 @@
  <section class="lt-toolbar"><label>INSTRUMENT<input id="ltSearch" placeholder="Find NSE/BSE equity" maxlength="45" autocomplete="off"></label><button id="ltFind">Find</button><div id="ltChips">${presets.map(s=>'<button data-sym="'+s+'">'+s+'</button>').join('')}</div><div id="ltTf">${[1,3,5,15].map(m=>'<button data-i="'+m+'" class="'+(m===1?'active':'')+'">'+m+'m</button>').join('')}</div></section>
  <div id="ltResults" class="lt-results" hidden></div>
  <div id="ltBanner" class="lt-banner warn">Waiting for verified provider data. No active prediction.</div>
- <div class="lt-grid"><section class="lt-card lt-chart"><header><div><small id="ltSource">NO STREAM</small><h2 id="ltTitle">Choose a stock</h2></div><div><strong id="ltLast">—</strong><small id="ltClock">—</small></div></header><div id="ltOhlc">O — H — L — C —</div><div class="lt-stage"><canvas id="ltCanvas" aria-label="Candlestick chart using Upstox historical data and time-validated quotes"></canvas></div><footer><span id="ltRate">0 updates/s</span><span id="ltLat">No exchange time</span><span>EMA 9 · EMA 21 · VWAP · volume</span></footer></section>
+ <div class="lt-grid"><section class="lt-card lt-chart"><header><div><small id="ltSource">NO STREAM</small><h2 id="ltTitle">Choose a stock</h2></div><div><strong id="ltLast">—</strong><small id="ltClock">—</small></div></header><div id="ltOhlc">O — H — L — C —</div><div class="lt-chart-controls"><span id="ltViewLabel">70 bars</span><button type="button" id="ltZoomIn" aria-label="Zoom in">＋</button><button type="button" id="ltZoomOut" aria-label="Zoom out">−</button><button type="button" id="ltFit">Fit</button><span>Exchange time · IST</span></div><div class="lt-stage"><canvas id="ltCanvas" aria-label="Candlestick chart using Upstox historical data and time-validated quotes"></canvas></div><footer><span id="ltRate">0 updates/s</span><span id="ltLat">No exchange time</span><span>EMA 9 · EMA 21 · VWAP · volume</span></footer></section>
  <aside class="lt-aside"><section class="lt-card"><small>RESEARCH FORECAST · NEXT 3 COMPLETED BARS</small><div id="ltSignal" class="lt-signal">NO VERIFIED SIGNAL</div><div id="ltProb">—</div><p id="ltLock">Statistical class estimates, NOT calibrated profit probabilities. One forecast can be locked only after a fresh completed bar.</p></section>
  <section class="lt-card"><small>VERIFIED FORECAST TRACK RECORD</small><div id="ltScore">No resolved forward forecasts yet.</div><p>Local browser journal, separate for DEMO and LIVE. Counts resolved forecasts only; small samples do not establish an edge.</p></section></aside></div>
  <section class="lt-card"><header><h3>Forecast journal</h3><button id="ltReset" type="button">Clear local journal</button></header><div id="ltLog">No locked forecasts.</div></section>
  <p class="lt-disclosure">Read-only paper research. A REST quote is a snapshot, not an exchange tick. Sparse trades can produce gaps in candle time. No synthetic data is ever labeled LIVE and no automatic orders are sent.</p>`;
  const S={key:'',symbol:'',interval:1,mode:'DEMO',synthetic:true,bars:[],forming:null,es:null,gen:0,
   last:null,prevClose:0,fresh:false,marketOpen:false,quoteTime:0,lastRx:0,volumeCumulative:null,
-  journal:[],lastBarTime:0,updates:[],dirty:true,reason:'Waiting for live data'};
+  journal:[],lastBarTime:0,updates:[],dirty:true,reason:'Waiting for live data',visible:70};
  const cv=$('ltCanvas'),ctx=cv.getContext('2d');
  const bucket=t=>Math.floor(t/(S.interval*60000))*S.interval*60000;
  const normalize=c=>({t:Date.parse(c.time),o:+c.open,h:+c.high,l:+c.low,c:+c.close,v:Math.max(0,+c.volume||0)});
@@ -121,19 +121,19 @@
  }
  function draw(){
   const bars=S.forming?S.bars.concat([S.forming]):S.bars;
-  const all=bars.slice(-90),w=$('ltCanvas').parentElement.clientWidth,h=440;
-  if(w<10)return;const dpr=window.devicePixelRatio||1;
-  cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);cv.style.width=w+'px';cv.style.height=h+'px';
+  const all=bars.slice(-S.visible),w=$('ltCanvas').parentElement.clientWidth,h=Math.max(340,Math.min(570,Math.round(w*.54)));$('ltViewLabel').textContent=all.length+' / '+bars.length+' candles';
+  if(w<10||view.classList.contains('hidden'))return;const dpr=Math.min(2,window.devicePixelRatio||1);
+  const ww=Math.round(w*dpr),hh=Math.round(h*dpr);if(cv.width!==ww||cv.height!==hh){cv.width=ww;cv.height=hh;cv.style.width=w+'px';cv.style.height=h+'px';}
   ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);
   if(all.length<2)return;
   const hi=Math.max(...all.map(x=>x.h)),lo=Math.min(...all.map(x=>x.l)),pad=Math.max(.01,(hi-lo)*.08);
-  const top=hi+pad,bottom=lo-pad,L=8,R=w-65,T=12,B=h-95,step=(R-L)/all.length,volBase=h-14;
+  const top=hi+pad,bottom=lo-pad,L=9,R=Math.max(65,w-82),T=12,B=h-95,step=(R-L)/all.length,volBase=h-20;
   const y=p=>T+(top-p)/(top-bottom)*(B-T),x=i=>L+step*(i+.5);
   for(let i=0;i<=5;i++){const val=bottom+(top-bottom)*i/5,Y=y(val);ctx.strokeStyle='#223d50';ctx.beginPath();ctx.moveTo(L,Y);ctx.lineTo(R,Y);ctx.stroke();ctx.fillStyle='#95b5c6';ctx.font='11px monospace';ctx.fillText(val.toFixed(2),R+7,Y);}
   const maxVol=Math.max(1,...all.map(b=>b.v));
   for(let i=0;i<all.length;i++){const b=all[i],col=b.c>=b.o?'#27dfae':'#ef708e',X=x(i);
    ctx.strokeStyle=col;ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(X,y(b.h));ctx.lineTo(X,y(b.l));ctx.stroke();
-   ctx.fillRect(X-step*.3,Math.min(y(b.o),y(b.c)),Math.max(1,step*.6),Math.max(1,Math.abs(y(b.o)-y(b.c))));
+   ctx.fillRect(X-Math.min(15,step*.62)/2,Math.min(y(b.o),y(b.c)),Math.max(1,Math.min(15,step*.62)),Math.max(1,Math.abs(y(b.o)-y(b.c))));
    ctx.globalAlpha=.27;ctx.fillRect(X-step*.28,volBase-b.v/maxVol*65,Math.max(1,step*.56),b.v/maxVol*65);ctx.globalAlpha=1;
   }
   const closes=bars.map(b=>b.c);
@@ -141,7 +141,10 @@
    points=points.slice(-all.length);ctx.strokeStyle=color;ctx.lineWidth=1.5;ctx.beginPath();
    points.forEach((p,i)=>i?ctx.lineTo(x(i),y(p)):ctx.moveTo(x(i),y(p)));ctx.stroke();};
   line(9,'#e9ca77');line(21,'#82acff');
-  ctx.fillStyle='#90adbd';ctx.font='10px sans-serif';for(let i=0;i<all.length;i+=Math.max(1,Math.floor(all.length/7)))ctx.fillText(clock(all[i].t),x(i),h-3);
+  let day='',pv=0,vv=0;const vwap=bars.map(b=>{const d=new Date(b.t).toLocaleDateString('en-CA',{timeZone:'Asia/Kolkata'});if(d!==day){day=d;pv=0;vv=0;}pv+=((b.h+b.l+b.c)/3)*b.v;vv+=b.v;return vv?pv/vv:NaN;});
+  ctx.strokeStyle='#d6a4fb';ctx.lineWidth=1.3;ctx.beginPath();let started=false;for(let i=0;i<all.length;i++){const p=vwap[bars.length-all.length+i];if(!Number.isFinite(p))continue;if(started)ctx.lineTo(x(i),y(p));else{ctx.moveTo(x(i),y(p));started=true;}}if(started)ctx.stroke();
+  if(S.last>0&&S.last>=bottom&&S.last<=top){const yy=y(S.last);ctx.strokeStyle=S.fresh?'#55ddaf':'#728798';ctx.setLineDash([4,4]);ctx.beginPath();ctx.moveTo(L,yy);ctx.lineTo(R,yy);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle='#e6fff8';ctx.font='bold 10px monospace';ctx.fillText(S.last.toFixed(2),R+5,yy-5);}
+  ctx.fillStyle='#90adbd';ctx.font='10px sans-serif';for(let i=0;i<all.length;i+=Math.max(1,Math.floor(all.length/7)))ctx.fillText(new Date(all[i].t).toLocaleString('en-IN',{timeZone:'Asia/Kolkata',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',hour12:false}),x(i),h-4);
   const last=all[all.length-1];$('ltOhlc').textContent=clock(last.t)+' IST · O '+money(last.o)+' H '+money(last.h)+' L '+money(last.l)+' C '+money(last.c)+' V '+Math.round(last.v);
  }
  function loadSnapshot(snap){
@@ -230,7 +233,11 @@
  const stop=()=>{if(S.es)S.es.close();S.es=null;S.fresh=false;S.gen++;status('warn','PAUSED');};
  window.MarketPulseLive={state:S,start,stop,draw,renderScore:updatePanels};
  setInterval(()=>{if(!S.synthetic&&S.fresh&&S.quoteTime&&Date.now()-S.quoteTime>FRESH_MS){S.fresh=false;S.reason='Exchange trade timestamp expired';status('bad','STALE');updatePanels();}},1000);
- window.addEventListener('resize',draw);
+ const zoom=delta=>{S.visible=Math.max(12,Math.min(250,S.visible+delta));draw();};
+  $('ltZoomIn').addEventListener('click',()=>zoom(-15));$('ltZoomOut').addEventListener('click',()=>zoom(15));$('ltFit').addEventListener('click',()=>{S.visible=70;draw();});
+  cv.addEventListener('wheel',e=>{e.preventDefault();zoom(e.deltaY>0?12:-12);},{passive:false});
+  window.addEventListener('resize',draw);
+  if(typeof ResizeObserver!=='undefined')new ResizeObserver(draw).observe(cv.parentElement);
  if(location.hash==='#live')start();
  };
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();

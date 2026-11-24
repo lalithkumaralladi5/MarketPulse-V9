@@ -61,6 +61,19 @@ with sync_playwright() as playwright:
  page.screenshot(path=str(OUT/'preview_v8_flow.png'),full_page=False)
  page.locator('.sidebar a[href="#chart"]').click()
  page.screenshot(path=str(OUT/'preview_v8_terminal.png'),full_page=False)
+ # New global markets and diagnostics pages must be real, interactive workspaces.
+ page.locator('.sidebar a[href="#global"]').click()
+ assert page.locator('#view-global').is_visible()
+ page.locator('#gmList [data-item]').first.wait_for(timeout=10000)
+ assert page.locator('#gmCanvas').count()==1
+ page.locator('.sidebar a[href="#quality"]').click()
+ assert page.locator('#view-quality').is_visible()
+ page.wait_for_function("() => document.getElementById('gmHealth').textContent.includes('HEALTHY')",timeout=12000)
+ page.locator('.sidebar a[href="#live"]').click()
+ assert page.locator('#ltZoomIn').is_visible()
+ page.locator('#ltZoomIn').click()
+ assert page.locator('#ltViewLabel').count()==1
+ page.locator('.sidebar a[href="#chart"]').click()
  assert not errors,'Browser JS errors: '+repr(errors)
  # A reload resets the active instrument, so assert portfolio persistence only
  # after all instrument-specific chart/news checks have completed.
