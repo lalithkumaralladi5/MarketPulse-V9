@@ -35,6 +35,7 @@
   cv.addEventListener('mouseleave',()=>{state.hover=-1;draw();});
   if(typeof ResizeObserver!=='undefined')new ResizeObserver(draw).observe(cv.parentElement);
   window.addEventListener('hashchange',()=>{if(location.hash==='#global')requestAnimationFrame(draw);if(location.hash==='#quality')diagnostics();});
+  document.addEventListener('click',e=>{const link=e.target.closest('a[href="#quality"],a[href="#global"]');if(!link)return;if(link.getAttribute('href')==='#quality')queueMicrotask(diagnostics);else requestAnimationFrame(draw);});
   list();if(location.hash==='#quality')diagnostics();
  }
  async function list(){
