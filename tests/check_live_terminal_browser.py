@@ -5,7 +5,7 @@ port=int(sys.argv[1]) if len(sys.argv)>1 else 8876
 base='http://127.0.0.1:'+str(port)
 with sync_playwright() as p:
  b=p.chromium.launch(headless=True,args=['--no-sandbox'])
- page=b.new_page(viewport={'width':1440,'height':960})
+ page=b.new_context(bypass_csp=True,viewport={'width':1440,'height':960}).new_page()
  errors=[]
  page.on('pageerror',lambda e:errors.append(str(e)))
  page.goto(base+'/#live',wait_until='domcontentloaded')
@@ -23,7 +23,7 @@ with sync_playwright() as p:
  page.locator('a.nav[href="#live"]').click()
  page.wait_for_function("window.MarketPulseLive.state.es!==null",timeout=14000)
  assert not errors,errors
- phone=b.new_page(viewport={'width':430,'height':880})
+ phone=b.new_context(bypass_csp=True,viewport={'width':430,'height':880}).new_page()
  phone.goto(base+'/#live',wait_until='domcontentloaded')
  phone.locator('#view-live').wait_for(state='visible',timeout=14000)
  phone.wait_for_function("window.MarketPulseLive?.state?.bars?.length>30",timeout=14000)
