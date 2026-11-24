@@ -23,6 +23,11 @@ with sync_playwright() as p:
  page.locator('a.nav[href="#live"]').click()
  page.wait_for_function("window.MarketPulseLive.state.es!==null",timeout=14000)
  assert not errors,errors
+ # Release the desktop SSE before opening the mobile session; closing a browser
+ # tab may take one provider poll for Java to observe the disconnected socket.
+ page.evaluate('window.MarketPulseLive.stop()')
+ page.close()
+ import time;time.sleep(3.5)
  phone=b.new_context(bypass_csp=True,viewport={'width':430,'height':880}).new_page()
  phone.goto(base+'/#live',wait_until='domcontentloaded')
  phone.locator('#view-live').wait_for(state='visible',timeout=14000)
