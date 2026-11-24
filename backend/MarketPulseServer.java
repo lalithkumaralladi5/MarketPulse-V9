@@ -55,6 +55,7 @@ public class MarketPulseServer {
             URI uri=ex.getRequestURI();String path=uri.getPath();
             if (path.startsWith("/api/")) {
                 Map<String,String> q=params(uri.getRawQuery());
+                if(path.equals("/api/live/stream")){LiveStream.stream(ex,q);return;}
                 Object result=switch(path) {
                     case "/api/status" -> status();
                     case "/api/ml/status" -> MlBridge.status();
@@ -74,7 +75,7 @@ public class MarketPulseServer {
                 };
                 send(ex,200,result);return;
             }
-            if (!path.equals("/") && !path.equals("/index.html") && !path.equals("/app.js") && !path.equals("/app.css") && !path.equals("/pro.js") && !path.equals("/pro.css") && !path.equals("/chart.js") && !path.equals("/chart.css") && !path.equals("/pages.js") && !path.equals("/pages.css") && !path.equals("/terminal.js") && !path.equals("/terminal.css") && !path.equals("/ml-panel.js") && !path.equals("/ml-panel.css") && !path.equals("/momentum-signals.js") && !path.equals("/chart-terminal-pro.js") && !path.equals("/chart-terminal-pro.css") && !path.equals("/india-heatmap.js") && !path.equals("/india-heatmap.css") && !path.equals("/trade-desk.js") && !path.equals("/trade-desk.css")) { send(ex,404,Map.of("error","Not found"));return; }
+            if (!path.equals("/") && !path.equals("/index.html") && !path.equals("/app.js") && !path.equals("/app.css") && !path.equals("/pro.js") && !path.equals("/pro.css") && !path.equals("/chart.js") && !path.equals("/chart.css") && !path.equals("/pages.js") && !path.equals("/pages.css") && !path.equals("/terminal.js") && !path.equals("/terminal.css") && !path.equals("/ml-panel.js") && !path.equals("/ml-panel.css") && !path.equals("/momentum-signals.js") && !path.equals("/chart-terminal-pro.js") && !path.equals("/chart-terminal-pro.css") && !path.equals("/india-heatmap.js") && !path.equals("/india-heatmap.css") && !path.equals("/trade-desk.js") && !path.equals("/trade-desk.css") && !path.equals("/live-terminal.js") && !path.equals("/live-terminal.css")) { send(ex,404,Map.of("error","Not found"));return; }
             Path file=ROOT.resolve(path.equals("/")?"index.html":path.substring(1)).normalize();
             if (!file.startsWith(ROOT)||!Files.isRegularFile(file)){send(ex,404,Map.of("error","UI not found. Start this server from the project root."));return;}
             byte[] data=Files.readAllBytes(file);
