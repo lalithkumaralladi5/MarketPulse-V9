@@ -30,10 +30,11 @@ def expect_private_auth(path):
 def check():
     health=json.loads(get('/api/health'))
     assert health.get('ok') is True, 'Health endpoint unhealthy'
+    assert health.get('release')=='Live Terminal r1' and health.get('liveStream')=='SSE_REST', 'Render has not deployed the Live Terminal release'
     if health.get('mode')=='LIVE':
         # Do not pass a real token or password to CI. Validate only that the
         # web-facing service is LOCKED and all sensitive routes return 401.
-        for path in ('/','/api/status','/api/ml/status','/api/india-heatmap/page?exchange=NSE','/chart-terminal-pro.js'):
+        for path in ('/','/api/status','/api/ml/status','/api/india-heatmap/page?exchange=NSE','/chart-terminal-pro.js','/live-terminal.js','/api/live/stream?key=NSE_EQ%7CINE002A01018'):
             expect_private_auth(path)
         print('PASS: privately password-protected LIVE Render service, no unauthorized market data access')
         return
@@ -47,6 +48,9 @@ def check():
     assert ml.get('ready') is False, 'No unverified/synthetic trained-model artifact should be hosted publicly'
     assert 'PRO RESEARCH TERMINAL • V10' in ui and 'RESEARCH DESK / V10' in ui, 'Hosted UI is still using old branding'
     assert 'LOCALHOST ONLY' not in ui, 'Hosted UI shows a misleading localhost label'
+    live_ui=get('/live-terminal.js')
+    assert 'marketpulse_forward_v2_' in live_ui and 'exchangeTime' in live_ui, 'Live Terminal JS not deployed'
+    assert 'Live Prediction Terminal' in ui, 'Live Terminal navigation missing'
     heatmap_js=get('/india-heatmap.js')
     assert 'marketpulse_india_exchange' in heatmap_js and 'ihMosaic' in heatmap_js, 'Hosted UI missing Indian stock heatmap'
     nse=json.loads(get('/api/india-heatmap/page?exchange=NSE&limit=20&sort=alpha'))

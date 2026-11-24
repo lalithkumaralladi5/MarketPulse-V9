@@ -1,0 +1,46 @@
+/* Live Prediction Terminal — isolated responsive professional dark workspace. */
+#view-live{max-width:1740px;min-width:0}
+.lt-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:8px 0 16px}
+.lt-heading span{font-size:10px;letter-spacing:.15em;font-weight:900;color:#55e2be}
+.lt-heading h1{font-size:clamp(24px,2.8vw,36px);color:#f0fbff;letter-spacing:-.035em;margin:7px 0}
+.lt-heading p{font-size:12px;line-height:1.7;color:#95b7c6;max-width:940px}
+.lt-toolbar{display:flex;align-items:center;gap:9px;flex-wrap:wrap;background:#0e2636;border:1px solid #2c5364;border-radius:12px;padding:13px;margin:10px 0 0}
+.lt-toolbar label{font-size:9px;color:#8ab3c5;font-weight:900;letter-spacing:.07em}
+.lt-toolbar input{display:block;margin-top:5px;min-width:230px;background:#081d2c;color:#f0fbff;border:1px solid #345469;border-radius:7px;padding:10px;font:inherit;font-size:12px}
+.lt-toolbar button,.lt-card button{background:#123a4c;border:1px solid #365d70;border-radius:7px;padding:10px 12px;color:#d7f7f7;cursor:pointer;font-weight:800;font-size:11px}
+.lt-toolbar button:hover,.lt-card button:hover{border-color:#69dbbc;background:#19485a}
+.lt-toolbar button.active{background:#13a986;border-color:#35d8a8;color:#07281e}
+#ltChips,#ltTf{display:flex;flex-wrap:wrap;gap:5px}
+#ltTf{margin-left:auto}
+.lt-pill{white-space:nowrap;border-radius:8px;border:1px solid #637987;padding:9px 12px;font-size:10px;font-weight:900}
+.lt-pill.warn,.lt-pill.bad{color:#f0c191;background:#423020;border-color:#805742}
+.lt-pill.demo{color:#ecbf84;background:#3b311f;border-color:#6e5c41}
+.lt-pill.good{color:#65eac2;background:#14382f;border-color:#427f6e}
+.lt-banner{font-size:11px;line-height:1.55;padding:10px 15px;border-radius:8px;margin:10px 0;color:#d8c29e;background:#3a3020;border:1px solid #71583d}
+.lt-banner.good{color:#a9e6cf;background:#11382e;border-color:#336e5b}
+.lt-banner.demo{color:#f4cc90;background:#3b3020;border-color:#71583d}
+.lt-results{position:relative;z-index:5;display:flex;flex-wrap:wrap;gap:6px;background:#102c3d;border:1px solid #39586b;border-radius:9px;padding:9px}
+.lt-results[hidden]{display:none}
+.lt-grid{display:grid;grid-template-columns:minmax(0,1.85fr) minmax(270px,.72fr);gap:14px;margin:15px 0}
+.lt-card{min-width:0;background:#0c2130;border:1px solid #305365;border-radius:12px;padding:17px;margin-bottom:12px;box-shadow:0 6px 25px #0002}
+.lt-card header{display:flex;justify-content:space-between;align-items:center;gap:12px;border-bottom:1px solid #2e4958;padding-bottom:12px;margin-bottom:12px}
+.lt-card header h2{font-size:21px;margin:6px 0 0;color:#eefaff}
+.lt-card header h3{font-size:16px;margin:0;color:#eaf8ff}
+.lt-card small{display:block;font-size:10px;letter-spacing:.035em;color:#8caebf}
+.lt-card header strong{font-size:25px;color:#eafff8;font-variant-numeric:tabular-nums}
+.lt-chart{min-width:0}
+.lt-stage{width:100%;overflow:hidden}
+.lt-stage canvas{display:block;max-width:100%;border-radius:7px;background:#061725}
+#ltOhlc{font:11px/1.5 ui-monospace,Menlo,monospace;color:#94bbcd;margin:8px 0}
+.lt-chart footer{display:flex;flex-wrap:wrap;align-items:center;gap:12px;color:#8babb9;font-size:10px;margin-top:10px}
+.lt-aside .lt-card{padding:17px}
+.lt-signal{font-size:19px;letter-spacing:.04em;font-weight:900;color:#c6dbeb;margin:14px 0}
+.lt-signal.up{color:#63e9b5}.lt-signal.down{color:#ff94a7}.lt-signal.blocked{color:#f0c58b}
+.lt-probs{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:12px 0;color:#bdd3dc;font-weight:850;font-size:12px}
+#ltLock,#ltScore,.lt-card p{color:#9ebac9;line-height:1.65;font-size:11px}
+#ltScore{padding:15px 0;color:#e6f3f9;font-weight:800}
+.lt-log-row{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;padding:10px;border-bottom:1px solid #243f50;color:#a9cad7;font-size:11px}
+.lt-log-row b{color:#eaf9ff}
+.lt-disclosure{padding:15px;color:#91afbf;font-size:11px;line-height:1.7}
+@media(max-width:1000px){.lt-grid{grid-template-columns:1fr}.lt-heading{align-items:flex-start;flex-direction:column}#ltTf{margin-left:0}}
+@media(max-width:600px){.lt-toolbar label{width:100%}.lt-toolbar input{width:100%;min-width:0}.lt-chart{padding:8px}.lt-card{padding:12px}#ltChips{width:100%}.lt-log-row{grid-template-columns:1fr 1fr;font-size:10px}}

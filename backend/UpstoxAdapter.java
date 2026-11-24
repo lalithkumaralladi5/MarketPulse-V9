@@ -99,8 +99,9 @@ final class UpstoxAdapter {
             "ltp",MarketPulseServer.num(market.get("ltp")),"oi",MarketPulseServer.num(market.get("oi")),"volume",MarketPulseServer.num(market.get("volume")),
             "iv",MarketPulseServer.num(g.get("iv")),"delta",MarketPulseServer.num(g.get("delta")),"theta",MarketPulseServer.num(g.get("theta")));
     }
-    static Map<String,Object> fullQuote(String key) {
-        Map<String,Object> data=MarketPulseServer.asMap(request("/v3/market-quote/quotes",Map.of("instrument_key",key),5_000));
+    static Map<String,Object> fullQuote(String key){return fullQuote(key,5_000);}
+    static Map<String,Object> fullQuote(String key,long ttlMs){
+        Map<String,Object> data=MarketPulseServer.asMap(request("/v3/market-quote/quotes",Map.of("instrument_key",key),ttlMs));
         Map<String,Object> m=MarketPulseServer.asMap(data.get(key.replace('|',':')));
         if(m.isEmpty()) {
             for(Object v:data.values()){

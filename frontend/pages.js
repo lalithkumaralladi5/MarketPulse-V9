@@ -6,6 +6,7 @@
   const content = document.querySelector('.content');
   const catalog = {
     scanner:['Option Scanner','Select an expiry, strike and CE/PE contract; open the exact premium chart.','▦'],
+    live:['Live Prediction Terminal','Upstox REST market snapshots, exchange-timed candles, guarded experimental forward forecasts.','⚡'],
     intelligence:['Market Intelligence','Market breadth proxies, OI landscape and an honest historical diagnostic.','◉'],
     indiaheatmap:['Indian Stock Heatmap','Browse the complete NSE/BSE equity-segment instrument catalogue; real quotes are page-scoped.','▦'],
     flow:['Liquidity Flow Map','Interactive strike network with separate OI and displayed order-book measurements.','〰'],
@@ -132,6 +133,7 @@
     const crumb=document.querySelector('.crumb');if(crumb)crumb.textContent='Trading terminal   ›   '+catalog[name][0];
     document.title='MarketPulse · '+catalog[name][0];
     if(updateHash&&location.hash!=='#'+name)history.pushState(null,'','#'+name);
+    if(name==='live')window.MarketPulseLive?.start();else window.MarketPulseLive?.stop();
     if(name==='chart')requestAnimationFrame(()=>{window.MarketPulseChart?.draw();});
     if(name==='flow')requestAnimationFrame(()=>{if(typeof renderFlow==='function')renderFlow();});
     if(name==='intelligence'&&window.MarketPulsePro?.refresh)window.MarketPulsePro.refresh();

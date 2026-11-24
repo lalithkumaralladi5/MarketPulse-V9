@@ -53,6 +53,8 @@ jobs:
         run: python tests/check_upstox_mode.py
       - name: Offline API, Copilot, search and Upstox adapter regression suite
         run: bash tests/ci_smoke.sh
+      - name: Live SSE exchange-timestamp, freshness and token-isolation checks
+        run: python tests/check_live_sse.py
       - name: Full NSE/BSE equity catalogues and page-scoped market quote tests
         run: python tests/check_india_heatmap.py
       - name: Stream a 110MB+ BOD master within the Render JVM heap limit
@@ -82,6 +84,8 @@ jobs:
           for i in $(seq 1 45); do curl -fsS http://127.0.0.1:8876/api/health && break; sleep .4; done
       - name: Test UI navigation, chart, drawings, heatmap, news, and mobile
         run: python tests/check_v8_browser.py 8876
+      - name: Live terminal UI, SSE lifecycle and mobile
+        run: python tests/check_live_terminal_browser.py 8876
       - name: Test chart-first workspace and historical signal annotations
         run: python tests/check_chart_pro.py 8876
       - name: Test full NSE/BSE heatmap tabs, search, navigation and stock opening
