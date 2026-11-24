@@ -102,6 +102,37 @@ The exact trading symbols and example keys must be verified through the provider
 
 Model files are stored under `ml/models/`. Generated CSVs, model files and credentials are excluded by `.gitignore`; trained model source and test metrics can be discussed but should not be called validated profitability.
 
+
+## Live Prediction Terminal (REST snapshot research)
+
+Open **Live Prediction Terminal** in the sidebar or visit `/#live`. This feature adds
+a read-only `/api/live/stream?key=...&interval=1|3|5|15` Server-Sent Events stream.
+When `UPSTOX_ACCESS_TOKEN` is set server-side, the stream fetches Upstox V3
+quotes at a quota-conscious cadence (~3 seconds) and delivers them to the browser
+without exposing credentials. This is **REST snapshot polling, not exchange tick streaming**
+or the Upstox V3 WebSocket feed.
+
+Candles created from incoming quotes use the reported **exchange last-trade time**,
+not browser receipt time. Quotes with missing, future or old trade times do not
+create candles. Provider errors, market closure, disconnects and stale quotes
+gate signal display rather than supplying invented market prices. Gaps are normal
+for illiquid instruments; quotes cannot reconstruct every trade or historical OHLC.
+
+The experimental 3-bar UP/FLAT/DOWN estimates are an **untrained statistical
+research heuristic**, not a calibrated ML model, trading recommendation, or
+validated win probability. Locking occurs only when real fresh observed bars
+finish; unresolved/resolved forecasts are kept in a bounded **browser-local**
+journal, separated by instrument, timeframe and LIVE/DEMO mode. Journal
+results are not a broker execution report or durable multi-device database.
+DEMO uses explicitly labelled synthetic prices and cannot be mistaken for LIVE.
+
+**For private LIVE access**: configure `UPSTOX_ACCESS_TOKEN` and a
+`MARKETPULSE_ACCESS_PASSWORD` (16+ characters) in the Render service's
+environment settings, not in GitHub or browser code. Existing Upstox data
+permissions and token expiry still apply. An authenticated model of this app
+must not be publicly redistributed without checking the provider's data terms.
+Real broker orders are not available.
+
 ## Architecture
 
 ```
